@@ -1,0 +1,5 @@
+1. Authentication
+2. Chatbot that analyses the mental age
+3. quize generator
+4. Chatbot that helps with homework
+5.
