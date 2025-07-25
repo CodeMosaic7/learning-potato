@@ -1,14 +1,10 @@
-from pydantic import BaseModel, EmailStr, validator, EmailStr
+from pydantic import BaseModel,Field, field_validator
+from typing import Dict, Any
 from datetime import datetime
 from typing import Optional, List
 
 # === USER SCHEMAS ===
 
-# class RegisterSchema(BaseModel):
-#     name: str
-#     email: str
-#     username: str
-#     password: str
 
 class UserBase(BaseModel):
     email: str
@@ -18,13 +14,13 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
-    @validator('password')
+    @field_validator('password')
     def validate_password(cls, v):
         if len(v) < 8:
             raise ValueError('Password must be at least 8 characters long')
         return v
 
-    @validator('username')
+    @field_validator('username')
     def validate_username(cls, v):
         if len(v) < 3:
             raise ValueError('Username must be at least 3 characters long')
@@ -56,48 +52,48 @@ class TokenData(BaseModel):
 # === CHATBOT SCHEMAS ===
 
 class ChatMessage(BaseModel):
-    message: str
+    message: str = Field(..., min_length=1, max_length=1000, description="User message to the chatbot")
+    timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow)
 
 class ChatResponse(BaseModel):
     response: str
-    assessment_completed: bool = False
+    stage: str
     mental_age: Optional[int] = None
-    conversation_context: str = "guidance"  # either "assessment" or "guidance"
+    intellect_level: Optional[str] = None
+    progress: Optional[str] = None
+    assessment_complete: Optional[bool] = False
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
 
-
-# === MENTAL AGE ASSESSMENT ===
-
-class MentalAgeAssessment(BaseModel):
+class InitializeChatbotResponse(BaseModel):
+    session_id: str
+    initial_response: ChatResponse
+    status: str
     user_id: int
-    mental_age: Optional[int] = None
-    assessment_date: Optional[datetime] = None
-    has_assessment: bool = False
 
-class AssessmentResponse(BaseModel):
-    question_number: int
-    question: str
-    response: str
-
-class AssessmentResult(BaseModel):
-    user_id: int
+class AssessmentReport(BaseModel):
     mental_age: int
-    responses: List[AssessmentResponse]
-    assessment_date: datetime
+    intellect_level: str
+    detailed_report: str
+    assessment_data: List[Dict[str, Any]]
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
 
+class LearningRecommendation(BaseModel):
+    topic: Optional[str] = None
+    subject_filter: Optional[str] = None
 
-# === WEBSITE GUIDANCE / CHAT STATE ===
-
-class WebsiteGuidance(BaseModel):
-    feature: str
-    path: str
-    description: str
-
-class ChatSessionState(BaseModel):
+class ChatbotStatus(BaseModel):
     user_id: int
-    assessment_stage: str
-    current_question: int
-    mental_age: Optional[int] = None
-    conversation_context: str
+    current_stage: str
+    mental_age: Optional[int]
+    intellect_level: Optional[str]
+    assessment_progress: Optional[str]
+    last_interaction: Optional[datetime]
+
+class ErrorResponse(BaseModel):
+    error: str
+    message: str
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
 
 # --- QUIZ MODELS ---
 

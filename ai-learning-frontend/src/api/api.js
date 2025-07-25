@@ -18,20 +18,39 @@ export async function registerUser(email, username, full_name, password) {
   }
 }
 
-export async function loginUser(email, password) {
-  try {
-    const res = await API.post('/auth/login', {
-      email,
-      password
-    });
-    return res.data;
-  } catch (error) {
-    console.error('Login Error:', error.response?.data || error.message);
-    throw new Error(error.response?.data?.detail || "Login failed");
-  }
-}
+export const loginUser = async (email,password) => {
+    try {
+      if (!email || !password) {
+        throw new Error('Email and password are required');
+      }
+      
+      const response = await API.post('/auth/login', {
+        email,
+        password
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Login successful:');
+      // user=getCurrentUser(response.data.access_token);
+      // console.log(user) // Fetch user profile after login
+      return { 
+        success: true, 
+        
+      };
+    } catch (error) {
+      console.error('Login failed:');
+      
+      return { 
+        success: false,
+      };
+    }
+  };
 
 export async function getCurrentUser(token) {
+  console.log("Using token:", token);
   try {
     const res = await API.get('/auth/me', {
       headers: {
@@ -93,22 +112,3 @@ export async function uploadHomeworkImage(file) {
 
 // Chatbot APIs
 
-export async function startChatbot(user_id) {
-  try {
-    const res = await API.post('/chatbot/start', { user_id });
-    return res.data;
-  } catch (error) {
-    console.error('Chatbot Init Error:', error.response?.data || error.message);
-    throw new Error("Chatbot start failed");
-  }
-}
-
-export async function sendMessage(user_id, message) {
-  try {
-    const res = await API.post('/chatbot/message', { user_id, message });
-    return res.data;
-  } catch (error) {
-    console.error('Chatbot Msg Error:', error.response?.data || error.message);
-    throw new Error("Message send failed");
-  }
-}

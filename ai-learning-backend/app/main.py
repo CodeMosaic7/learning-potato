@@ -1,10 +1,11 @@
 # Entry for fastapi
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.dependencies import get_db
 from app.db import engine
-from fastapi.middleware.cors import CORSMiddleware
-from app.models import Base, User  # Ensure `User` is imported
+from app.models import Base, User  
 from app.authentication.routes import router as auth_router
 from app.router.chatbot import router as chatbot_router
 from app.router.quiz import router as quiz_router
@@ -21,7 +22,6 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[FRONTEND_URL], 
     allow_credentials=True,
-    
     allow_headers=["*"],
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 )

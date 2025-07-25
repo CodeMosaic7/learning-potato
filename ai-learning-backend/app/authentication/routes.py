@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status,Response,Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -14,6 +14,10 @@ from app.authentication.auth import (
     get_current_active_user,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
+
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -48,7 +52,7 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
     return db_user
 
 @router.post("/login", response_model=Token)
-async def login_user(login_data: UserLogin, db: Session = Depends(get_db)):
+async def login_user(login_data: UserLogin,response: Response, db: Session = Depends(get_db)):
     user = authenticate_user(db, login_data.email, login_data.password)
     if not user:
         raise HTTPException(
@@ -60,6 +64,16 @@ async def login_user(login_data: UserLogin, db: Session = Depends(get_db)):
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
+    response.set_cookie(
+        key="access_token",
+        value=access_token,  
+        httponly=True,
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        samesite="None",  
+        secure=True,
+    
+    )
+    print(f"DEBUG: Created access token: {access_token[:20]}...")
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/me", response_model=UserResponse)
@@ -70,8 +84,12 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 async def protected_route(current_user: User = Depends(get_current_active_user)):
     return {"message": f"Hello {current_user.username}, this is a protected route!"}
 
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie(key="access_token")
+    return {"message": "Logged out successfully"}
 
-from fastapi import Request
+
 
 @router.get("/debug-token")
 async def debug_token(request: Request):

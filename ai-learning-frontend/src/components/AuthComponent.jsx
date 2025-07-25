@@ -23,17 +23,18 @@ const AuthComponent = ({ onLogin }) => {
       let response;
 
       if (isLogin) {
-        response = await loginUser(formData.email, formData.password);
+        response = await loginUser(formData.email, formData.password);      
+          
       } else {
         response = await registerUser(
           formData.full_name,
           formData.email,
           formData.username,
           formData.password
-        );
-      }
-
-      const user = await getCurrentUser();
+        );}
+      
+      console.log("Registration Response:", response);
+      const user = await getCurrentUser(response.access_token);
 
       if (user) {
         onLogin(user); // pass user to parent
