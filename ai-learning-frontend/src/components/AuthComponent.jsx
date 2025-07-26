@@ -1,11 +1,14 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Card from "../elements/Card.jsx";
 import Input from "../elements/Input.jsx";
 import Button from "../elements/Button.jsx";
 import { Brain, Zap } from "lucide-react";
 import { registerUser, loginUser, getCurrentUser } from "../api/api.js";
 
-const AuthComponent = ({ onLogin }) => {
+
+
+const AuthComponent = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
@@ -14,7 +17,8 @@ const AuthComponent = ({ onLogin }) => {
     password: ""
   });
   const [isLoading, setIsLoading] = useState(false);
-
+  const navigation= useNavigate();
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -35,12 +39,13 @@ const AuthComponent = ({ onLogin }) => {
       
       console.log("Registration Response:", response);
       const user = await getCurrentUser(response.access_token);
+      sessionStorage.setItem("access_token", response.access_token);
+      sessionStorage.setItem("user_data", JSON.stringify(user));
+      console.log("User Data:", user);
+      navigation("/dashboard");
 
-      if (user) {
-        onLogin(user); // pass user to parent
-      } else {
-        alert("Login successful but failed to fetch user profile.");
-      }
+      console.log("Current User:", user);
+      
     } catch (error) {
       console.error("Authentication Error:", error);
       alert(

@@ -11,8 +11,9 @@ from app.authentication.auth import (
     get_password_hash, 
     authenticate_user, 
     create_access_token, 
-    get_current_active_user,
-    ACCESS_TOKEN_EXPIRE_MINUTES
+    # get_current_active_user,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    get_current_user
 )
 
 from dotenv import load_dotenv
@@ -77,11 +78,11 @@ async def login_user(login_data: UserLogin,response: Response, db: Session = Dep
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/me", response_model=UserResponse)
-async def read_users_me(current_user: User = Depends(get_current_active_user)):
+async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 @router.get("/protected")
-async def protected_route(current_user: User = Depends(get_current_active_user)):
+async def protected_route(current_user: User = Depends(get_current_user)):
     return {"message": f"Hello {current_user.username}, this is a protected route!"}
 
 @router.post("/logout")
