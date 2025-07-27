@@ -29,10 +29,8 @@ async def initialize_chatbot(
         user_id = current_user["id"]
         logger.info(f"Initializing chatbot for user {user_id}")
         
-        # Create chatbot instance
         chatbot = create_chatbot(user_id, db_session)
         
-        # Generate welcome message
         welcome_response = chatbot.process_message("Hello! I'm ready to start.")
         
         return InitializeChatbotResponse(

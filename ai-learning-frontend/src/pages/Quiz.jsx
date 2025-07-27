@@ -1,8 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { Trophy, Clock, BookOpen, CheckCircle, X, Lightbulb, RotateCcw, Brain, Star, Target, Zap } from 'lucide-react';
 import { generateQuiz } from '../api/api';
+import { useNavigate } from 'react-router-dom';
 
 const Quiz = () => {
+  const navigate = useNavigate();
+  useEffect(() => {
+      const userData = sessionStorage.getItem('user_data');
+      if (userData) {
+        setUser(JSON.parse(userData));
+      } else {
+        navigate('/');
+      }
+    }, [navigate]);
   const [quizState, setQuizState] = useState({
     currentQuestion: 0,
     score: 0,

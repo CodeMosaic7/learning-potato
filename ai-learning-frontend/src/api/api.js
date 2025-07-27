@@ -111,4 +111,27 @@ export async function uploadHomeworkImage(file) {
 }
 
 // Chatbot APIs
+export async function sendMessageToChatbot(message, userId) {
+  try {
+    const res = await API.post('/chatbot/message', {
+      message,
+      user_id: userId
+    });
+    return res.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.detail || `Chatbot Error: ${error.message}`);
+  }
+}
+export async function getChatbotResponse(message, userId) {
+  try {
+    const res = await API.post('/chatbot/response', {
+      message,
+      user_id: userId
+    });
+    return res.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.detail || `Chatbot Response Error: ${error.message}`);
+  }
+}
+
 

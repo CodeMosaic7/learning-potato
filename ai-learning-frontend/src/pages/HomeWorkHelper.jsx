@@ -1,8 +1,18 @@
-import {useState, useRef } from 'react';
+import {useState, useRef,useEffect } from 'react';
 import { Upload, Send, BookOpen, Camera, User, Bot, Star, Clock, Brain, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // Mock API function - replace with your actual import
 const uploadHomeworkImage = async (file) => {
+  const navigate = useNavigate();
+  useEffect(() => {
+      const userData = sessionStorage.getItem('user_data');
+      if (userData) {
+        setUser(JSON.parse(userData));
+      } else {
+        navigate('/');
+      }
+    }, [navigate]);
   if (!file.type.startsWith('image/')) {
     throw new Error('Please select an image file');
   }
