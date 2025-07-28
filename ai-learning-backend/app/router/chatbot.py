@@ -26,7 +26,10 @@ async def initialize_chatbot(
 ):
     """Initialize a new chatbot session for the authenticated user."""
     try:
-        user_id = current_user["id"]
+        print(current_user)
+        user_id = getattr(current_user, "id", None)
+    
+        print(f"User ID: {user_id}")
         logger.info(f"Initializing chatbot for user {user_id}")
         
         chatbot = create_chatbot(user_id, db_session)
@@ -41,12 +44,11 @@ async def initialize_chatbot(
         )
         
     except Exception as e:
-        logger.error(f"Error initializing chatbot for user {current_user.get('id', 'unknown')}: {str(e)}")
+        logger.error(f"Error initializing chatbot for user {user.get('id', 'unknown')}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to initialize chatbot: {str(e)}"
         )
-
 @router.post("/chat",
              response_model=ChatResponse,
              summary="Send message to chatbot",
@@ -58,7 +60,7 @@ async def chat_with_bot(
 ):
     """Process a user message through the chatbot."""
     try:
-        user_id = current_user["id"]
+        user_id = getattr(current_user, "id", None)
         logger.info(f"Processing message from user {user_id}: {message.message[:50]}...")
         
         # Create chatbot instance

@@ -111,26 +111,93 @@ export async function uploadHomeworkImage(file) {
 }
 
 // Chatbot APIs
-export async function sendMessageToChatbot(message, userId) {
+export async function initializeChatbot() {
   try {
-    const res = await API.post('/chatbot/message', {
-      message,
-      user_id: userId
-    });
+    const res = await API.post('/chatbot/initialize', {});
     return res.data;
   } catch (error) {
-    throw new Error(error.response?.data?.detail || `Chatbot Error: ${error.message}`);
+    throw new Error(error.response?.data?.detail || `Chatbot Initialization Error: ${error.message}`);
   }
 }
-export async function getChatbotResponse(message, userId) {
+// Working
+export async function sendMessageToChatbot(sessionId, message) {
   try {
-    const res = await API.post('/chatbot/response', {
-      message,
-      user_id: userId
+    const response = await API.post('/chatbot/message', {
+      session_id: sessionId,
+      message: message
     });
-    return res.data;
+    return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.detail || `Chatbot Response Error: ${error.message}`);
+    console.error('Send message error:', error);
+    throw new Error(error.response?.data?.detail || `Message Send Error: ${error.message}`);
+  }
+}
+
+// Get chatbot response (if you have a separate endpoint for this)
+export async function getChatbotResponse(sessionId, messageId) {
+  try {
+    const response = await API.get(`/chatbot/response/${sessionId}/${messageId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Get chatbot response error:', error);
+    throw new Error(error.response?.data?.detail || `Get Response Error: ${error.message}`);
+  }
+}
+
+// Get chat history for a session
+export async function getChatHistory(sessionId) {
+  try {
+    const response = await API.get(`/chatbot/history/${sessionId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Get chat history error:', error);
+    throw new Error(error.response?.data?.detail || `Chat History Error: ${error.message}`);
+  }
+}
+
+// End/close chatbot session
+export async function endChatbotSession(sessionId) {
+  try {
+    const response = await API.post('/chatbot/end-session', {
+      session_id: sessionId
+    });
+    return response.data;
+  } catch (error) {
+    console.error('End session error:', error);
+    throw new Error(error.response?.data?.detail || `End Session Error: ${error.message}`);
+  }
+}
+
+// Get user's mental age analysis (if you have this feature)
+export async function getMentalAgeAnalysis(sessionId) {
+  try {
+    const response = await API.get(`/chatbot/analysis/${sessionId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Get analysis error:', error);
+    throw new Error(error.response?.data?.detail || `Analysis Error: ${error.message}`);
+  }
+}
+
+// Update chatbot settings/preferences
+export async function updateChatbotSettings(settings) {
+  try {
+    const response = await API.put('/chatbot/settings', settings);
+    return response.data;
+  } catch (error) {
+    console.error('Update settings error:', error);
+    throw new Error(error.response?.data?.detail || `Settings Update Error: ${error.message}`);
+  }
+}
+
+// Get chatbot status
+export async function getChatbotStatus(sessionId) {
+  try {
+    const response = await API.get(`/chatbot/status/${sessionId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Get status error:', error);
+    throw new Error(error.response?.data?.detail || `Status Check Error: ${error.message}`);
   }
 }
 
