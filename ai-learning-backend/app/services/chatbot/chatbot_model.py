@@ -1,8 +1,7 @@
-from typing import Optional, Dict, Any, List, Union
+from typing import Optional, Dict, Any, List
 from enum import Enum
 import json
 import os
-import uuid
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -30,35 +29,15 @@ class IntellectLevel(Enum):
     ADVANCED = "advanced"      # 13-16 years
     EXPERT = "expert"          # 17+ years
 
-class SessionData:
-    """In-memory session data for guest users"""
-    def __init__(self):
-        self.sessions = {}
-    
-    def get_session(self, session_id: str) -> Dict:
-        return self.sessions.get(session_id, {})
-    
-    def save_session(self, session_id: str, data: Dict):
-        self.sessions[session_id] = data
-    
-    def delete_session(self, session_id: str):
-        if session_id in self.sessions:
-            del self.sessions[session_id]
-
-# Global session storage for guest users
-guest_sessions = SessionData()
-
 class MentalAgeAssessmentChatbot:
     """LLM-powered chatbot for mental age assessment and educational guidance"""
     
-    def __init__(self, user_id: Optional[int] = None, db_session=None, session_id: Optional[str] = None):
+    def __init__(self, user_id: int, db_session):
         self.user_id = user_id
         self.db_session = db_session
-        self.session_id = session_id or str(uuid.uuid4())
-        self.is_guest = user_id is None
         
-        # Initialize database connection only for registered users
-        self.db = UserDatabase(db_session) if db_session and not self.is_guest else None
+        # Initialize database connection
+        self.db = UserDatabase(db_session)
         self.llm = self._initialize_llm()
         
         # Initial states
@@ -68,13 +47,10 @@ class MentalAgeAssessmentChatbot:
         self.mental_age = None
         self.intellect_level = None
         self.stage = ChatbotStage.WELCOME
-        self.assessment_context = ""
+        self.current_assessment_question = None
         
-        # Load existing data
-        if self.is_guest:
-            self._load_guest_session()
-        else:
-            self._load_user_data()
+        # Load existing user data
+        self._load_user_data()
     
     def _initialize_llm(self) -> BaseChatModel:
         """Initialize the language model"""
@@ -90,54 +66,24 @@ class MentalAgeAssessmentChatbot:
             convert_system_message_to_human=True
         )
     
-    def _load_guest_session(self):
-        """Load session data for guest users"""
-        session_data = guest_sessions.get_session(self.session_id)
-        if session_data:
-            self.conversation_history = session_data.get('conversation_history', [])
-            self.current_question = session_data.get('current_question', 0)
-            self.responses = session_data.get('responses', [])
-            self.mental_age = session_data.get('mental_age')
-            self.intellect_level = IntellectLevel(session_data['intellect_level']) if session_data.get('intellect_level') else None
-            self.stage = ChatbotStage(session_data.get('stage', ChatbotStage.WELCOME.value))
-            self.assessment_context = session_data.get('assessment_context', "")
-    
-    def _save_guest_session(self):
-        """Save session data for guest users"""
-        session_data = {
-            'conversation_history': [
-                {'type': type(msg).__name__, 'content': msg.content} 
-                for msg in self.conversation_history
-            ],
-            'current_question': self.current_question,
-            'responses': self.responses,
-            'mental_age': self.mental_age,
-            'intellect_level': self.intellect_level.value if self.intellect_level else None,
-            'stage': self.stage.value,
-            'assessment_context': self.assessment_context,
-            'last_updated': datetime.now().isoformat()
-        }
-        guest_sessions.save_session(self.session_id, session_data)
-    
     def _load_user_data(self):
-        """Load data for registered users"""
-        if self.db and self.user_id:
-            existing_mental_age = self.db.get_user_mental_age(self.user_id)
-            if existing_mental_age:
-                self.mental_age = existing_mental_age
-                self.intellect_level = self._determine_intellect_level(existing_mental_age)
-                self.stage = ChatbotStage.GUIDANCE
+        """Load existing mental age data for the user"""
+        existing_mental_age = self.db.get_user_mental_age(self.user_id)
+        if existing_mental_age:
+            self.mental_age = existing_mental_age
+            self.intellect_level = self._determine_intellect_level(existing_mental_age)
+            self.stage = ChatbotStage.GUIDANCE
     
     def _save_user_data(self):
-        """Save data for registered users"""
-        if self.db and self.user_id and self.mental_age:
+        """Save mental age data to database"""
+        if self.mental_age:
             self.db.save_mental_age(
                 self.user_id, 
                 self.mental_age, 
                 {
                     "responses": self.responses,
                     "intellect_level": self.intellect_level.value if self.intellect_level else None,
-                    "session_type": "registered_user"
+                    "assessment_date": datetime.now().isoformat()
                 }
             )
     
@@ -271,14 +217,11 @@ class MentalAgeAssessmentChatbot:
         if self.mental_age and self.intellect_level:
             user_context = f"User's mental age: {self.mental_age}, Intellect level: {self.intellect_level.value}"
         
-        session_context = f"User type: {'Guest user' if self.is_guest else 'Registered user'}"
-        
         prompt = f"""
         You are an intelligent educational chatbot assistant specializing in personalized learning guidance.
         
         {stage_context}
         {user_context}
-        {session_context}
         {context}
         
         Recent conversation:
@@ -292,7 +235,6 @@ class MentalAgeAssessmentChatbot:
         - Educational and helpful
         - Concise but informative
         
-        If this is a guest user, mention that they can create an account to save their progress permanently.
         If providing learning guidance, tailor it to their intellect level.
         """
         
@@ -307,7 +249,6 @@ class MentalAgeAssessmentChatbot:
         user_profile = f"""
         Mental Age: {self.mental_age}
         Intellect Level: {self.intellect_level.value}
-        User Type: {'Guest' if self.is_guest else 'Registered'}
         Learning Characteristics:
         - Beginner (5-8): Visual learning, games, simple concepts, short attention span
         - Intermediate (9-12): Interactive activities, practical examples, structured learning
@@ -332,8 +273,6 @@ class MentalAgeAssessmentChatbot:
         
         Make recommendations age-appropriate and engaging for their intellect level.
         Be specific and practical.
-        
-        {'Note: Mention that creating an account would allow them to track progress and get more personalized features.' if self.is_guest else ''}
         """
         
         return self.llm.invoke(prompt).content
@@ -358,18 +297,13 @@ class MentalAgeAssessmentChatbot:
         
         self.conversation_history.append(AIMessage(content=response))
         
-        # Save session data
-        if self.is_guest:
-            self._save_guest_session()
-        
         result = {
             "response": response,
             "stage": self.stage.value,
             "mental_age": self.mental_age,
             "intellect_level": self.intellect_level.value if self.intellect_level else None,
             "progress": f"{self.current_question}/5" if self.stage == ChatbotStage.ASSESSMENT_IN_PROGRESS else None,
-            "session_id": self.session_id,
-            "is_guest": self.is_guest
+            "user_id": self.user_id
         }
         result.update(additional_data)
         
@@ -377,12 +311,10 @@ class MentalAgeAssessmentChatbot:
     
     def _handle_welcome(self, user_message: str) -> str:
         """Handle welcome stage with LLM"""
-        context = f"""
+        context = """
         This is the first interaction. Welcome the user warmly and explain that you're an AI learning assistant
         who can help assess their learning level and provide personalized educational guidance.
         Ask if they'd like to take a quick 5-question assessment to get personalized recommendations.
-        
-        {'This is a guest user - mention they can use the service without registration, but creating an account saves their progress.' if self.is_guest else 'This is a registered user.'}
         """
         
         response = self._generate_personalized_response(user_message, context)
@@ -392,48 +324,56 @@ class MentalAgeAssessmentChatbot:
     def _handle_assessment_start(self, user_message: str) -> str:
         """Handle assessment start with LLM"""
         # Check if user wants to start assessment
-        intent_prompt = f"""
-        User message: "{user_message}"
+        # intent_prompt = f"""
+        # User message: "{user_message}"
         
-        Is the user agreeing to start the assessment? Look for positive responses like:
-        yes, sure, okay, let's do it, I'm ready, start, begin, etc.
+        # Is the user agreeing to start the assessment? Look for positive responses like:
+        # yes, sure, okay, let's do it, I'm ready, start, begin, etc.
         
-        Respond with only "YES" or "NO"
-        """
+        # Respond with only "YES" or "NO"
+        # """
         
-        intent = self.llm.invoke(intent_prompt).content.strip().upper()
+        # intent = self.llm.invoke(intent_prompt).content.strip().upper()
         
-        if "YES" in intent:
+        # if "YES" in intent:
             # Generate first question
-            question = self._generate_assessment_question(0)
-            self.stage = ChatbotStage.ASSESSMENT_IN_PROGRESS
-            self.current_question = 0
+        question = self._generate_assessment_question(0)
+        self.current_assessment_question = question
             
-            context = f"""
-            Starting the assessment. Present this question in an encouraging way: "{question}"
-            Mention it's question 1 of 5 and encourage them to think it through.
-            """
+            # Update stage and question counter
+        self.stage = ChatbotStage.ASSESSMENT_IN_PROGRESS
+        self.current_question = 0
             
-            return self._generate_personalized_response(user_message, context)
-        else:
-            context = """
-            User declined assessment. Offer to help with learning questions or topics instead.
-            Be understanding and mention they can take the assessment anytime later.
-            """
-            self.stage = ChatbotStage.GUIDANCE
-            return self._generate_personalized_response(user_message, context)
-    
+            # Create a direct response that includes the actual question
+        response = f"""Great! Let's begin your personalized learning assessment. 
+
+This will help me understand your learning level so I can provide the best guidance for you.
+
+**Question 1 of 5:**
+
+{question}
+
+Take your time to think through your answer!"""
+            
+        return response
+    # else:
+    #     context = """
+    #         User declined assessment. Offer to help with learning questions or topics instead.
+    #         Be understanding and mention they can take the assessment anytime later.
+    #         """
+    #     self.stage = ChatbotStage.GUIDANCE
+    #     return self._generate_personalized_response(user_message, context)
+
     def _handle_assessment_progress(self, user_message: str) -> tuple[str, Dict]:
         """Handle assessment progress with LLM analysis"""
         # Analyze current response
-        if hasattr(self, 'current_assessment_question'):
+        if self.current_assessment_question:
             analysis = self._analyze_response_and_adjust(
                 self.current_assessment_question, 
                 user_message
             )
         else:
-            analysis = {"estimated_mental_age": 10, "confidence": 5}
-        
+            analysis = {"estimated_mental_age": 10, "confidence": 5, "reasoning": "Question context missing"}
         
         self.responses.append({
             "question_number": self.current_question,
@@ -450,20 +390,20 @@ class MentalAgeAssessmentChatbot:
             self.mental_age = self._calculate_final_mental_age(all_analyses)
             self.intellect_level = self._determine_intellect_level(self.mental_age)
             
-            # Save to database (only for registered users)
-            if not self.is_guest:
-                self._save_user_data()
-            
-            context = f"""
-            Assessment complete! The user's mental age is {self.mental_age} (intellect level: {self.intellect_level.value}).
-            Congratulate them and explain what this means in encouraging terms.
-            Mention you'll now provide personalized learning guidance and ask what they'd like help with.
-            
-            {'Remind them that as a guest, their data is temporary. Creating an account would save their assessment results.' if self.is_guest else ''}
-            """
+            # Save to database
+            self._save_user_data()
             
             self.stage = ChatbotStage.GUIDANCE
-            response = self._generate_personalized_response(user_message, context)
+            
+            response = f"""🎉 Assessment Complete! 
+
+Based on your responses, your learning profile shows:
+- Mental Age: {self.mental_age} years
+- Learning Level: {self.intellect_level.value.title()}
+
+This means I can now provide personalized learning guidance that's just right for you! 
+
+What subject or topic would you like help with? I can suggest study methods, recommend resources, or help with specific questions."""
             
             return response, {
                 "assessment_complete": True,
@@ -475,12 +415,14 @@ class MentalAgeAssessmentChatbot:
             next_question = self._generate_assessment_question(self.current_question, previous_responses)
             self.current_assessment_question = next_question
             
-            context = f"""
-            Present question {self.current_question + 1} of 5: "{next_question}"
-            Acknowledge their previous answer briefly and encourage them for the next question.
-            """
+            response = f"""Great answer! 
+
+**Question {self.current_question + 1} of 5:**
+
+{next_question}
+
+You're doing well - keep thinking it through!"""
             
-            response = self._generate_personalized_response(user_message, context)
             return response, {"current_analysis": analysis}
     
     def _handle_assessment_complete(self, user_message: str) -> str:
@@ -533,7 +475,6 @@ class MentalAgeAssessmentChatbot:
         
         Mental Age: {self.mental_age}
         Intellect Level: {self.intellect_level.value}
-        User Type: {'Guest' if self.is_guest else 'Registered'}
         
         Assessment Details:
         {responses_summary}
@@ -547,8 +488,6 @@ class MentalAgeAssessmentChatbot:
         6. Progress milestones to track
         
         Format as a structured, professional but encouraging report.
-        
-        {'Note: Add a section about benefits of creating an account for progress tracking.' if self.is_guest else ''}
         """
         
         report = self.llm.invoke(prompt).content
@@ -558,83 +497,45 @@ class MentalAgeAssessmentChatbot:
             "intellect_level": self.intellect_level.value,
             "detailed_report": report,
             "assessment_data": self.responses,
-            "is_guest": self.is_guest,
-            "session_id": self.session_id
+            "user_id": self.user_id
         }
 
 
-def create_chatbot(user_id: Optional[int] = None, db_session=None, session_id: Optional[str] = None) -> MentalAgeAssessmentChatbot:
-    """Create a new chatbot instance for a user or guest"""
-    return MentalAgeAssessmentChatbot(user_id, db_session, session_id)
+def create_chatbot(user_id: int, db_session) -> MentalAgeAssessmentChatbot:
+    """Create a new chatbot instance for authenticated user"""
+    return MentalAgeAssessmentChatbot(user_id, db_session)
 
 
-def initialize_chatbot_session(user_id: Optional[int] = None, session_id: Optional[str] = None) -> Dict[str, Any]:
+def initialize_chatbot_session(user_id: int) -> Dict[str, Any]:
     """Initialize a new chatbot session with LLM-powered welcome"""
-    
-    # For registered users
-    if user_id:
+    db_session = SessionLocal()
+    try:
+        chatbot = create_chatbot(user_id, db_session)
+        initial_response = chatbot.process_message("Hello! I'm ready to start.")
+        
+        return {
+            "initial_response": initial_response,
+            "status": "initialized",
+            "user_id": user_id
+        }
+    finally:
+        db_session.close()
+
+
+def process_chatbot_message(message: str, user_id: int) -> Dict[str, Any]:
+    """Process a message with full LLM intelligence"""
+    try:
         db_session = SessionLocal()
         try:
             chatbot = create_chatbot(user_id, db_session)
-            initial_response = chatbot.process_message("Hello! I'm ready to start.")
-            
-            return {
-                "session_id": chatbot.session_id,
-                "initial_response": initial_response,
-                "status": "initialized",
-                "user_type": "registered"
-            }
-        finally:
-            db_session.close()
-    
-    # For guest users
-    else:
-        chatbot = create_chatbot(session_id=session_id)
-        initial_response = chatbot.process_message("Hello! I'm new here.")
-        
-        return {
-            "session_id": chatbot.session_id,
-            "initial_response": initial_response,
-            "status": "initialized",
-            "user_type": "guest"
-        }
-
-
-def process_chatbot_message(message: str, user_id: Optional[int] = None, session_id: Optional[str] = None) -> Dict[str, Any]:
-    """Process a message with full LLM intelligence"""
-    
-    try:
-        # For registered users
-        if user_id:
-            db_session = SessionLocal()
-            try:
-                chatbot = create_chatbot(user_id, db_session)
-                response_data = chatbot.process_message(message)
-                
-                return {
-                    "success": True,
-                    "data": response_data,
-                    "user_type": "registered"
-                }
-            finally:
-                db_session.close()
-        
-        # For guest users
-        else:
-            if not session_id:
-                return {
-                    "success": False,
-                    "error": "session_id is required for guest users"
-                }
-            
-            chatbot = create_chatbot(session_id=session_id)
             response_data = chatbot.process_message(message)
             
             return {
                 "success": True,
-                "data": response_data,
-                "user_type": "guest"
+                "data": response_data
             }
+        finally:
+            db_session.close()
             
     except Exception as e:
         return {
@@ -643,49 +544,15 @@ def process_chatbot_message(message: str, user_id: Optional[int] = None, session
         }
 
 
-def get_learning_insights(user_id: Optional[int] = None, session_id: Optional[str] = None) -> Dict[str, Any]:
+def get_learning_insights(user_id: int) -> Dict[str, Any]:
     """Get comprehensive learning insights using LLM"""
-    
     try:
-        # For registered users
-        if user_id:
-            db_session = SessionLocal()
-            try:
-                chatbot = create_chatbot(user_id, db_session)
-                return chatbot.get_detailed_assessment_report()
-            finally:
-                db_session.close()
-        
-        # For guest users
-        else:
-            if not session_id:
-                return {"error": "session_id is required for guest users"}
-            
-            chatbot = create_chatbot(session_id=session_id)
+        db_session = SessionLocal()
+        try:
+            chatbot = create_chatbot(user_id, db_session)
             return chatbot.get_detailed_assessment_report()
+        finally:
+            db_session.close()
             
     except Exception as e:
         return {"error": str(e)}
-
-
-def clear_guest_session(session_id: str) -> Dict[str, Any]:
-    """Clear a guest session"""
-    try:
-        guest_sessions.delete_session(session_id)
-        return {"success": True, "message": "Session cleared"}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-
-def get_guest_session_info(session_id: str) -> Dict[str, Any]:
-    """Get guest session information"""
-    session_data = guest_sessions.get_session(session_id)
-    if session_data:
-        return {
-            "exists": True,
-            "last_updated": session_data.get('last_updated'),
-            "stage": session_data.get('stage'),
-            "mental_age": session_data.get('mental_age'),
-            "intellect_level": session_data.get('intellect_level')
-        }
-    return {"exists": False}

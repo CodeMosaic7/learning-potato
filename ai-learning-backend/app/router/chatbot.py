@@ -63,10 +63,8 @@ async def chat_with_bot(
         user_id = getattr(current_user, "id", None)
         logger.info(f"Processing message from user {user_id}: {message.message[:50]}...")
         
-        # Create chatbot instance
         chatbot = create_chatbot(user_id, db_session)
         
-        # Process message
         response_data = chatbot.process_message(message.message)
         
         return ChatResponse(**response_data)
@@ -88,7 +86,7 @@ async def get_chatbot_status(
 ):
     """Get the current status of the user's chatbot session."""
     try:
-        user_id = current_user["id"]
+        user_id = getattr(current_user, "id", None)
         logger.info(f"Getting chatbot status for user {user_id}")
         
         # Create chatbot instance to check status
@@ -120,7 +118,7 @@ async def get_assessment_report(
 ):
     """Get a detailed assessment report for the user."""
     try:
-        user_id = current_user["id"]
+        user_id = getattr(current_user, "id", None)
         logger.info(f"Generating assessment report for user {user_id}")
         
         # Get learning insights
@@ -154,7 +152,7 @@ async def get_learning_recommendations(
 ):
     """Get personalized learning recommendations."""
     try:
-        user_id = current_user["id"]
+        user_id = getattr(current_user, "id", None)
         topic = request.topic or "general learning guidance"
         logger.info(f"Getting learning recommendations for user {user_id}, topic: {topic}")
         
@@ -193,7 +191,7 @@ async def restart_assessment(
 ):
     """Restart the mental age assessment for the user."""
     try:
-        user_id = current_user["id"]
+        user_id = getattr(current_user, "id", None)
         logger.info(f"Restarting assessment for user {user_id}")
         
         # Clear existing mental age data
@@ -233,7 +231,7 @@ async def get_conversation_history(
 ):
     """Get conversation history for the user."""
     try:
-        user_id = current_user["id"]
+        user_id = getattr(current_user, "id", None)
         logger.info(f"Getting conversation history for user {user_id}")
         
         # Create chatbot instance
@@ -267,7 +265,7 @@ async def reset_chatbot_session(
 ):
     """Reset the chatbot session completely."""
     try:
-        user_id = current_user["id"]
+        user_id = getattr(current_user, "id", None)
         logger.info(f"Resetting chatbot session for user {user_id}")
         
         # This would typically clear session data, conversation history, etc.
@@ -315,30 +313,6 @@ async def chatbot_health_check():
             detail="Chatbot service is not healthy"
         )
 
-# # Error handlers
-# @router.exception_handler(ValueError)
-# async def value_error_handler(request, exc):
-#     """Handle ValueError exceptions."""
-#     logger.error(f"ValueError in chatbot API: {str(exc)}")
-#     return JSONResponse(
-#         status_code=status.HTTP_400_BAD_REQUEST,
-#         content=ErrorResponse(
-#             error="Invalid Input",
-#             message=str(exc)
-#         ).dict()
-#     )
-
-# @router.exception_handler(Exception)
-# async def general_exception_handler(request, exc):
-#     """Handle general exceptions."""
-#     logger.error(f"Unexpected error in chatbot API: {str(exc)}")
-#     return JSONResponse(
-#         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#         content=ErrorResponse(
-#             error="Internal Server Error",
-#             message="An unexpected error occurred"
-#         ).dict()
-#     )
 
 
 

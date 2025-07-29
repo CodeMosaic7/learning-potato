@@ -119,10 +119,10 @@ export async function initializeChatbot() {
     throw new Error(error.response?.data?.detail || `Chatbot Initialization Error: ${error.message}`);
   }
 }
-// Working
+
 export async function sendMessageToChatbot(sessionId, message) {
   try {
-    const response = await API.post('/chatbot/message', {
+    const response = await API.post('/chatbot/chat', {
       session_id: sessionId,
       message: message
     });
