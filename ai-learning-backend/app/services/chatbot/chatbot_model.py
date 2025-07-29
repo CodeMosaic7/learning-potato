@@ -49,8 +49,9 @@ class MentalAgeAssessmentChatbot:
         self.stage = ChatbotStage.WELCOME
         self.current_assessment_question = None
         
-        # Load existing user data
+        # Load existing user data and state
         self._load_user_data()
+        self._load_conversation_state()
     
     def _initialize_llm(self) -> BaseChatModel:
         """Initialize the language model"""
@@ -72,7 +73,50 @@ class MentalAgeAssessmentChatbot:
         if existing_mental_age:
             self.mental_age = existing_mental_age
             self.intellect_level = self._determine_intellect_level(existing_mental_age)
-            self.stage = ChatbotStage.GUIDANCE
+            # Only set to GUIDANCE if no active conversation state exists
+            if not self._has_active_conversation():
+                self.stage = ChatbotStage.GUIDANCE
+    
+    def _has_active_conversation(self) -> bool:
+        """Check if user has an active conversation in progress"""
+        try:
+            conversation_state = self.db.get_conversation_state(self.user_id)
+            return conversation_state is not None and conversation_state.get('stage') != 'COMPLETE'
+        except:
+            return False
+    
+    def _load_conversation_state(self):
+        """Load conversation state from database"""
+        try:
+            state_data = self.db.get_conversation_state(self.user_id)
+            if state_data:
+                self.stage = ChatbotStage(state_data.get('stage', 'welcome'))
+                self.current_question = state_data.get('current_question', 0)
+                self.responses = state_data.get('responses', [])
+                self.current_assessment_question = state_data.get('current_assessment_question')
+                
+                print(f"Loaded conversation state: stage={self.stage.value}, question={self.current_question}")
+            else:
+                print("No existing conversation state found, starting fresh")
+        except Exception as e:
+            print(f"Error loading conversation state: {e}")
+            # Start fresh if there's an error
+            self.stage = ChatbotStage.WELCOME
+    
+    def _save_conversation_state(self):
+        """Save current conversation state to database"""
+        try:
+            state_data = {
+                'stage': self.stage.value,
+                'current_question': self.current_question,
+                'responses': self.responses,
+                'current_assessment_question': self.current_assessment_question,
+                'last_updated': datetime.now().isoformat()
+            }
+            self.db.save_conversation_state(self.user_id, state_data)
+            print(f"Saved conversation state: stage={self.stage.value}")
+        except Exception as e:
+            print(f"Error saving conversation state: {e}")
     
     def _save_user_data(self):
         """Save mental age data to database"""
@@ -161,7 +205,8 @@ class MentalAgeAssessmentChatbot:
             # Extract JSON from response
             analysis_data = json.loads(analysis.strip())
             return analysis_data
-        except:
+        except Exception as e:
+            print(f"Error parsing analysis: {e}")
             # Fallback analysis
             return {
                 "estimated_mental_age": 10,
@@ -199,7 +244,8 @@ class MentalAgeAssessmentChatbot:
             result = self.llm.invoke(prompt).content.strip()
             mental_age = int(''.join(filter(str.isdigit, result)))
             return max(5, min(18, mental_age))
-        except:
+        except Exception as e:
+            print(f"Error calculating mental age: {e}")
             ages = [analysis['estimated_mental_age'] for analysis in all_analyses]
             return sum(ages) // len(ages)
     
@@ -277,8 +323,10 @@ class MentalAgeAssessmentChatbot:
         
         return self.llm.invoke(prompt).content
     
-    def process_message(self, user_message: str) -> Dict[str, Any]:
+    async def process_message(self, user_message: str) -> Dict[str, Any]:
         """Process user message with LLM-powered responses"""
+        print(f"Processing message. Current stage: {self.stage.value}")
+        
         self.conversation_history.append(HumanMessage(content=user_message))
         
         response = ""
@@ -297,6 +345,9 @@ class MentalAgeAssessmentChatbot:
         
         self.conversation_history.append(AIMessage(content=response))
         
+        # Save conversation state after processing
+        self._save_conversation_state()
+        
         result = {
             "response": response,
             "stage": self.stage.value,
@@ -307,6 +358,7 @@ class MentalAgeAssessmentChatbot:
         }
         result.update(additional_data)
         
+        print(f"Returning response. New stage: {self.stage.value}")
         return result
     
     def _handle_welcome(self, user_message: str) -> str:
@@ -319,33 +371,39 @@ class MentalAgeAssessmentChatbot:
         
         response = self._generate_personalized_response(user_message, context)
         self.stage = ChatbotStage.ASSESSMENT_START
+        print(f"Stage changed from WELCOME to {self.stage.value}")
         return response
     
     def _handle_assessment_start(self, user_message: str) -> str:
         """Handle assessment start with LLM"""
+        print(f"Handling assessment start. Current stage: {self.stage.value}")
+        
         # Check if user wants to start assessment
-        # intent_prompt = f"""
-        # User message: "{user_message}"
+        intent_prompt = f"""
+        User message: "{user_message}"
         
-        # Is the user agreeing to start the assessment? Look for positive responses like:
-        # yes, sure, okay, let's do it, I'm ready, start, begin, etc.
+        Is the user agreeing to start the assessment? Look for positive responses like:
+        yes, sure, okay, let's do it, I'm ready, start, begin, etc.
         
-        # Respond with only "YES" or "NO"
-        # """
+        Respond with only "YES" or "NO"
+        """
         
-        # intent = self.llm.invoke(intent_prompt).content.strip().upper()
-        
-        # if "YES" in intent:
-            # Generate first question
-        question = self._generate_assessment_question(0)
-        self.current_assessment_question = question
+        try:
+            intent = self.llm.invoke(intent_prompt).content.strip().upper()
+            print(f"User intent: {intent}")
             
-            # Update stage and question counter
-        self.stage = ChatbotStage.ASSESSMENT_IN_PROGRESS
-        self.current_question = 0
-            
-            # Create a direct response that includes the actual question
-        response = f"""Great! Let's begin your personalized learning assessment. 
+            if "YES" in intent:
+                # Generate first question
+                question = self._generate_assessment_question(0)
+                self.current_assessment_question = question
+                    
+                # Update stage and question counter
+                self.stage = ChatbotStage.ASSESSMENT_IN_PROGRESS
+                self.current_question = 0
+                print(f"Stage changed to {self.stage.value}, question: {self.current_question}")
+                    
+                # Create a direct response that includes the actual question
+                response = f"""Great! Let's begin your personalized learning assessment. 
 
 This will help me understand your learning level so I can provide the best guidance for you.
 
@@ -354,18 +412,38 @@ This will help me understand your learning level so I can provide the best guida
 {question}
 
 Take your time to think through your answer!"""
+                    
+                return response
+            else:
+                context = """
+                User declined assessment. Offer to help with learning questions or topics instead.
+                Be understanding and mention they can take the assessment anytime later.
+                """
+                self.stage = ChatbotStage.GUIDANCE
+                print(f"User declined, stage changed to {self.stage.value}")
+                return self._generate_personalized_response(user_message, context)
+                
+        except Exception as e:
+            print(f"Error in assessment start: {e}")
+            # Fallback - assume they want to start
+            question = self._generate_assessment_question(0)
+            self.current_assessment_question = question
+            self.stage = ChatbotStage.ASSESSMENT_IN_PROGRESS
+            self.current_question = 0
+            print(f"Fallback: Stage changed to {self.stage.value}")
             
-        return response
-    # else:
-    #     context = """
-    #         User declined assessment. Offer to help with learning questions or topics instead.
-    #         Be understanding and mention they can take the assessment anytime later.
-    #         """
-    #     self.stage = ChatbotStage.GUIDANCE
-    #     return self._generate_personalized_response(user_message, context)
+            return f"""Let's begin your learning assessment!
+
+**Question 1 of 5:**
+
+{question}
+
+Take your time to answer!"""
 
     def _handle_assessment_progress(self, user_message: str) -> tuple[str, Dict]:
         """Handle assessment progress with LLM analysis"""
+        print(f"Handling assessment progress. Question {self.current_question + 1} of 5")
+        
         # Analyze current response
         if self.current_assessment_question:
             analysis = self._analyze_response_and_adjust(
@@ -394,6 +472,10 @@ Take your time to think through your answer!"""
             self._save_user_data()
             
             self.stage = ChatbotStage.GUIDANCE
+            print(f"Assessment complete! Stage changed to {self.stage.value}")
+            
+            # Clear conversation state since assessment is complete
+            self.db.clear_conversation_state(self.user_id)
             
             response = f"""🎉 Assessment Complete! 
 
@@ -415,6 +497,8 @@ What subject or topic would you like help with? I can suggest study methods, rec
             next_question = self._generate_assessment_question(self.current_question, previous_responses)
             self.current_assessment_question = next_question
             
+            print(f"Moving to question {self.current_question + 1}")
+            
             response = f"""Great answer! 
 
 **Question {self.current_question + 1} of 5:**
@@ -432,31 +516,36 @@ You're doing well - keep thinking it through!"""
     
     def _handle_guidance(self, user_message: str) -> str:
         """Handle guidance stage with LLM"""
-        subject_prompt = f"""
-        User message: "{user_message}"
-        
-        Is the user asking about a specific subject or topic? If yes, extract the main subject/topic.
-        If asking general questions about learning, studying, or homework, respond with "GENERAL".
-        If asking about something unrelated to education, respond with "OTHER".
-        
-        Examples:
-        "help with math" -> "math"
-        "I need study tips" -> "GENERAL" 
-        "what's the weather" -> "OTHER"
-        """
-        
-        topic_analysis = self.llm.invoke(subject_prompt).content.strip()
-        
-        if topic_analysis == "OTHER":
-            context = """
-            User asked about non-educational topic. Gently redirect to learning-related topics
-            while being helpful and mentioning your educational expertise.
+        try:
+            subject_prompt = f"""
+            User message: "{user_message}"
+            
+            Is the user asking about a specific subject or topic? If yes, extract the main subject/topic.
+            If asking general questions about learning, studying, or homework, respond with "GENERAL".
+            If asking about something unrelated to education, respond with "OTHER".
+            
+            Examples:
+            "help with math" -> "math"
+            "I need study tips" -> "GENERAL" 
+            "what's the weather" -> "OTHER"
             """
-            return self._generate_personalized_response(user_message, context)
-        elif topic_analysis == "GENERAL":
-            return self._generate_learning_recommendations()
-        else:
-            return self._generate_learning_recommendations(topic_analysis)
+            
+            topic_analysis = self.llm.invoke(subject_prompt).content.strip()
+            
+            if topic_analysis == "OTHER":
+                context = """
+                User asked about non-educational topic. Gently redirect to learning-related topics
+                while being helpful and mentioning your educational expertise.
+                """
+                return self._generate_personalized_response(user_message, context)
+            elif topic_analysis == "GENERAL":
+                return self._generate_learning_recommendations()
+            else:
+                return self._generate_learning_recommendations(topic_analysis)
+                
+        except Exception as e:
+            print(f"Error in guidance handling: {e}")
+            return self._generate_learning_recommendations(user_message)
     
     def get_detailed_assessment_report(self) -> Dict[str, Any]:
         """Generate comprehensive assessment report using LLM"""
@@ -511,7 +600,7 @@ def initialize_chatbot_session(user_id: int) -> Dict[str, Any]:
     db_session = SessionLocal()
     try:
         chatbot = create_chatbot(user_id, db_session)
-        initial_response = chatbot.process_message("Hello! I'm ready to start.")
+        initial_response = await chatbot.process_message("Hello! I'm ready to start.")
         
         return {
             "initial_response": initial_response,
@@ -522,13 +611,13 @@ def initialize_chatbot_session(user_id: int) -> Dict[str, Any]:
         db_session.close()
 
 
-def process_chatbot_message(message: str, user_id: int) -> Dict[str, Any]:
+async def process_chatbot_message(message: str, user_id: int) -> Dict[str, Any]:
     """Process a message with full LLM intelligence"""
     try:
         db_session = SessionLocal()
         try:
             chatbot = create_chatbot(user_id, db_session)
-            response_data = chatbot.process_message(message)
+            response_data = await chatbot.process_message(message)
             
             return {
                 "success": True,
@@ -538,6 +627,7 @@ def process_chatbot_message(message: str, user_id: int) -> Dict[str, Any]:
             db_session.close()
             
     except Exception as e:
+        print(f"Error processing chatbot message: {e}")
         return {
             "success": False,
             "error": str(e)

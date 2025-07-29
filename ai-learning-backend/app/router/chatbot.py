@@ -65,12 +65,12 @@ async def chat_with_bot(
         
         chatbot = create_chatbot(user_id, db_session)
         
-        response_data = chatbot.process_message(message.message)
+        response_data = await chatbot.process_message(message.message)
         
         return ChatResponse(**response_data)
         
     except Exception as e:
-        logger.error(f"Error processing chat message for user {current_user.get('id', 'unknown')}: {str(e)}")
+        logger.error(f"Error processing chat message for user {getattr(current_user, 'id', None)}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process message: {str(e)}"
