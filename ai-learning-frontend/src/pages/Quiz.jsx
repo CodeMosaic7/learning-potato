@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 const Quiz = () => {
   const navigate = useNavigate();
+  const [userData, setUser] = useState(null);
   useEffect(() => {
       const userData = sessionStorage.getItem('user_data');
       if (userData) {

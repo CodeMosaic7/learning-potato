@@ -62,6 +62,7 @@ class ChatResponse(BaseModel):
     intellect_level: Optional[str] = None
     progress: Optional[str] = None
     assessment_complete: Optional[bool] = False
+    conversation_state: Optional[Dict[str, Any]] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 class InitializeChatbotResponse(BaseModel):

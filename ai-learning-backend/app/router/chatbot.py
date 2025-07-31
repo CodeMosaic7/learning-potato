@@ -10,7 +10,7 @@ from app.authentication.auth import get_current_user
 from app.authentication.user_logic import UserDatabase
 from datetime import datetime
 import logging
-
+from app.models import User
 router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ async def initialize_chatbot(
         
         chatbot = create_chatbot(user_id, db_session)
         
-        welcome_response = chatbot.process_message("Hello! I'm ready to start.")
+        welcome_response =await chatbot.process_message("Hello! I'm ready to start.")
         
         return InitializeChatbotResponse(
             session_id=f"chatbot_{user_id}",
@@ -44,11 +44,16 @@ async def initialize_chatbot(
         )
         
     except Exception as e:
-        logger.error(f"Error initializing chatbot for user {user.get('id', 'unknown')}: {str(e)}")
+        logger.error(f"Error processing chat message for user {getattr(current_user, 'id', None)}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to initialize chatbot: {str(e)}"
         )
+@router.post("/chat",
+             response_model=ChatResponse,
+             summary="Send message to chatbot",
+             description="Process user message and get AI-powered response")
+
 @router.post("/chat",
              response_model=ChatResponse,
              summary="Send message to chatbot",
@@ -63,19 +68,74 @@ async def chat_with_bot(
         user_id = getattr(current_user, "id", None)
         logger.info(f"Processing message from user {user_id}: {message.message[:50]}...")
         
+        # First, check the current conversation_state from the database
+        user_record = db_session.query(User).filter(User.id == user_id).first()
+        if not user_record:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        current_conversation_state = getattr(user_record, 'conversation_state', None)
+        logger.info(f"Current conversation state for user {user_id}: {current_conversation_state}")
+        
+        
         chatbot = create_chatbot(user_id, db_session)
         
-        response_data = await chatbot.process_message(message.message)
+        # Process message based on conversation state
+        if current_conversation_state == "assessment_in_progress":
+            # User is already in assessment, continue with assessment flow
+            logger.info(f"User {user_id} is in assessment, processing assessment message")
+            response_data = await chatbot.process_message(message.message)
+            
+        elif current_conversation_state == "assessment_completed":
+            # User has completed assessment, handle post-assessment interactions
+            logger.info(f"User {user_id} has completed assessment, processing general message")
+            response_data = await chatbot.process_message(message.message)
+            
+        elif current_conversation_state in [None, "initial", "not_started"]:
+            # User hasn't started assessment yet, check if they want to start
+            logger.info(f"User {user_id} in initial state, processing initial message")
+            response_data = await chatbot.process_message(message.message)
+            
+            # If user agrees to start assessment, update conversation state
+            if response_data.get("intent") == "yes":
+                try:
+                    db_session.query(User).filter(User.id == user_id).update({
+                        "conversation_state": "assessment_in_progress",  
+                    })
+                    db_session.commit()
+                    logger.info(f"Updated conversation_state to 'assessment_in_progress' for user {user_id}")
+                except Exception as db_error:
+                    logger.error(f"Failed to update conversation_state for user {user_id}: {str(db_error)}")
+                    db_session.rollback()
+                    
+        else:
+            logger.info(f"User {user_id} in state '{current_conversation_state}', processing message normally")
+            response_data = await chatbot.process_message(message.message)
+            
+        if (current_conversation_state == "assessment_in_progress" and 
+            response_data.get("stage") == "assessment_completed"):
+            try:
+                db_session.query(User).filter(User.id == user_id).update({
+                    "conversation_state": "assessment_completed",  
+                })
+                db_session.commit()
+                logger.info(f"Updated conversation_state to 'assessment_completed' for user {user_id}")
+            except Exception as db_error:
+                logger.error(f"Failed to update conversation_state to completed for user {user_id}: {str(db_error)}")
+                db_session.rollback()
         
         return ChatResponse(**response_data)
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error processing chat message for user {getattr(current_user, 'id', None)}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process message: {str(e)}"
         )
-
 @router.get("/status",
             response_model=ChatbotStatus,
             summary="Get chatbot status",

@@ -77,53 +77,6 @@ async def get_current_user(
     
     return user
 
-# Fixed get_current_active_user function
-# async def get_current_user(
-#     request: Request,
-#     credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False)),
-#     db: Session = Depends(get_db)
-# ):
-#     """
-#     Dependency that supports both Authorization header and cookies
-#     """
-#     token = None
-    
-#     # Try to get token from Authorization header first
-#     if credentials:
-#         token = credentials.credentials
-#         print(f"DEBUG: Got token from Authorization header")
-#     else:
-#         # Try to get token from cookie
-#         token = request.cookies.get("access_token")
-#         print(f"DEBUG: Got token from cookie: {token is not None}")
-    
-#     if not token:
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="Not authenticated",
-#             headers={"WWW-Authenticate": "Bearer"},
-#         )
-    
-#     # Rest of the validation logic...
-#     credentials_exception = HTTPException(
-#         status_code=status.HTTP_401_UNAUTHORIZED,
-#         detail="Could not validate credentials",
-#         headers={"WWW-Authenticate": "Bearer"},
-#     )
-    
-#     try:
-#         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-#         email: str = payload.get("sub")
-#         if email is None:
-#             raise credentials_exception
-#     except JWTError:
-#         raise credentials_exception
-    
-#     user = get_user_by_email(db, email)
-#     if user is None:
-#         raise credentials_exception
-    
-#     return user# Utility functions
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)

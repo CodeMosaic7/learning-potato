@@ -323,7 +323,7 @@ class MentalAgeAssessmentChatbot:
         
         return self.llm.invoke(prompt).content
     
-    async def process_message(self, user_message: str) -> Dict[str, Any]:
+    async def process_message(self,user_message: str) -> Dict[str, Any]:
         """Process user message with LLM-powered responses"""
         print(f"Processing message. Current stage: {self.stage.value}")
         
@@ -595,7 +595,7 @@ def create_chatbot(user_id: int, db_session) -> MentalAgeAssessmentChatbot:
     return MentalAgeAssessmentChatbot(user_id, db_session)
 
 
-def initialize_chatbot_session(user_id: int) -> Dict[str, Any]:
+async def initialize_chatbot_session(user_id: int) -> Dict[str, Any]:
     """Initialize a new chatbot session with LLM-powered welcome"""
     db_session = SessionLocal()
     try:

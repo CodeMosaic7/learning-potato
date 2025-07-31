@@ -1,8 +1,8 @@
 import os
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, JSON, func
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker,Session
 from sqlalchemy.pool import StaticPool
 
 
@@ -19,9 +19,6 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# ✅ User Database Utility
-
-# ✅ Create tables if run directly
 if __name__ == "__main__":
     Base.metadata.create_all(bind=engine)
     print("✅ Database and tables created successfully.")
