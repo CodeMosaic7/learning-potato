@@ -15,25 +15,26 @@ from app.authentication.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     get_current_user
 )
-
 from dotenv import load_dotenv
 import os
+
 load_dotenv()
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    # look for user in database, if it exists
     existing_user = db.query(User).filter(
         (User.email == user.email) | (User.username == user.username)
     ).first()
-    
+    # if user already exists, raise an error
     if existing_user:
         if existing_user.email == user.email:
             raise HTTPException(status_code=400, detail="Email already registered")
         else:
             raise HTTPException(status_code=400, detail="Username already taken")
-    
+    # else create a new user
     hashed_password = get_password_hash(user.password)
     db_user = User(
         email=user.email,
@@ -41,19 +42,20 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
         full_name=user.full_name,
         hashed_password=hashed_password
     )
-
     try:
+        # add to database
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=400, detail="User registration failed")
-
     return db_user
 
 @router.post("/login", response_model=Token)
 async def login_user(login_data: UserLogin,response: Response, db: Session = Depends(get_db)):
+    # look if user exists
+    # authenticate user
     user = authenticate_user(db, login_data.email, login_data.password)
     if not user:
         raise HTTPException(
@@ -61,10 +63,12 @@ async def login_user(login_data: UserLogin,response: Response, db: Session = Dep
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    # generate access token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
+    # set access token in response cookies
     response.set_cookie(
         key="access_token",
         value=access_token,  
@@ -76,6 +80,7 @@ async def login_user(login_data: UserLogin,response: Response, db: Session = Dep
     )
     print(f"DEBUG: Created access token: {access_token[:20]}...")
     return {"access_token": access_token, "token_type": "bearer"}
+
 
 @router.get("/me", response_model=UserResponse)
 async def read_users_me(current_user: User = Depends(get_current_user)):

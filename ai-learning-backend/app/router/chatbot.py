@@ -49,10 +49,6 @@ async def initialize_chatbot(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to initialize chatbot: {str(e)}"
         )
-@router.post("/chat",
-             response_model=ChatResponse,
-             summary="Send message to chatbot",
-             description="Process user message and get AI-powered response")
 
 @router.post("/chat",
              response_model=ChatResponse,
@@ -68,7 +64,7 @@ async def chat_with_bot(
         user_id = getattr(current_user, "id", None)
         logger.info(f"Processing message from user {user_id}: {message.message[:50]}...")
         
-        # First, check the current conversation_state from the database
+        # current conversation_state
         user_record = db_session.query(User).filter(User.id == user_id).first()
         if not user_record:
             raise HTTPException(
@@ -82,22 +78,17 @@ async def chat_with_bot(
         
         chatbot = create_chatbot(user_id, db_session)
         
-        # Process message based on conversation state
-        if current_conversation_state == "assessment_in_progress":
-            # User is already in assessment, continue with assessment flow
-            logger.info(f"User {user_id} is in assessment, processing assessment message")
-            response_data = await chatbot.process_message(message.message)
-            
-        elif current_conversation_state == "assessment_completed":
-            # User has completed assessment, handle post-assessment interactions
-            logger.info(f"User {user_id} has completed assessment, processing general message")
-            response_data = await chatbot.process_message(message.message)
-            
-        elif current_conversation_state in [None, "initial", "not_started"]:
-            # User hasn't started assessment yet, check if they want to start
-            logger.info(f"User {user_id} in initial state, processing initial message")
-            response_data = await chatbot.process_message(message.message)
-            
+        new_stage = response_data.get("stage")
+        if new_stage == "assessment_in_progress" and current_conversation_state != "assessment_in_progress":
+            db_session.query(User).filter(User.id == user_id).update({
+                "conversation_state": "assessment_in_progress"
+            })
+            db_session.commit()
+
+        elif new_stage == "assessment_completed" and current_conversation_state != "assessment_completed":
+            db_session.query(User).filter(User.id == user_id).update({
+                "conversation_state": "assessment_completed"
+    })
             # If user agrees to start assessment, update conversation state
             if response_data.get("intent") == "yes":
                 try:

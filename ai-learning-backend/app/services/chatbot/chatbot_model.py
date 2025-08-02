@@ -40,13 +40,13 @@ class MentalAgeAssessmentChatbot:
         self.db = UserDatabase(db_session)
         self.llm = self._initialize_llm()
         
-        # Initial states
+        # Initial states - Initialize stage first to prevent None errors
+        self.stage = ChatbotStage.WELCOME
         self.conversation_history = []
         self.current_question = 0
         self.responses = []
         self.mental_age = None
         self.intellect_level = None
-        self.stage = ChatbotStage.WELCOME
         self.current_assessment_question = None
         
         # Load existing user data and state
@@ -69,20 +69,25 @@ class MentalAgeAssessmentChatbot:
     
     def _load_user_data(self):
         """Load existing mental age data for the user"""
-        existing_mental_age = self.db.get_user_mental_age(self.user_id)
-        if existing_mental_age:
-            self.mental_age = existing_mental_age
-            self.intellect_level = self._determine_intellect_level(existing_mental_age)
-            # Only set to GUIDANCE if no active conversation state exists
-            if not self._has_active_conversation():
-                self.stage = ChatbotStage.GUIDANCE
+        try:
+            existing_mental_age = self.db.get_user_mental_age(self.user_id)
+            if existing_mental_age:
+                self.mental_age = existing_mental_age
+                self.intellect_level = self._determine_intellect_level(existing_mental_age)
+                # Only set to GUIDANCE if no active conversation state exists
+                if not self._has_active_conversation():
+                    self.stage = ChatbotStage.GUIDANCE
+        except Exception as e:
+            print(f"Error loading user data: {e}")
+            # Continue with default values
     
     def _has_active_conversation(self) -> bool:
         """Check if user has an active conversation in progress"""
         try:
             conversation_state = self.db.get_conversation_state(self.user_id)
             return conversation_state is not None and conversation_state.get('stage') != 'COMPLETE'
-        except:
+        except Exception as e:
+            print(f"Error checking active conversation: {e}")
             return False
     
     def _load_conversation_state(self):
@@ -90,7 +95,14 @@ class MentalAgeAssessmentChatbot:
         try:
             state_data = self.db.get_conversation_state(self.user_id)
             if state_data:
-                self.stage = ChatbotStage(state_data.get('stage', 'welcome'))
+                # Safely load stage with fallback
+                stage_value = state_data.get('stage', 'welcome')
+                try:
+                    self.stage = ChatbotStage(stage_value)
+                except ValueError:
+                    print(f"Invalid stage value: {stage_value}, defaulting to WELCOME")
+                    self.stage = ChatbotStage.WELCOME
+                
                 self.current_question = state_data.get('current_question', 0)
                 self.responses = state_data.get('responses', [])
                 self.current_assessment_question = state_data.get('current_assessment_question')
@@ -100,12 +112,17 @@ class MentalAgeAssessmentChatbot:
                 print("No existing conversation state found, starting fresh")
         except Exception as e:
             print(f"Error loading conversation state: {e}")
-            # Start fresh if there's an error
+            # Ensure stage is always set to a valid value
             self.stage = ChatbotStage.WELCOME
     
     def _save_conversation_state(self):
         """Save current conversation state to database"""
         try:
+            # Ensure stage is not None before accessing .value
+            if self.stage is None:
+                print("Warning: stage is None, setting to WELCOME")
+                self.stage = ChatbotStage.WELCOME
+            
             state_data = {
                 'stage': self.stage.value,
                 'current_question': self.current_question,
@@ -120,16 +137,19 @@ class MentalAgeAssessmentChatbot:
     
     def _save_user_data(self):
         """Save mental age data to database"""
-        if self.mental_age:
-            self.db.save_mental_age(
-                self.user_id, 
-                self.mental_age, 
-                {
-                    "responses": self.responses,
-                    "intellect_level": self.intellect_level.value if self.intellect_level else None,
-                    "assessment_date": datetime.now().isoformat()
-                }
-            )
+        try:
+            if self.mental_age:
+                self.db.save_mental_age(
+                    self.user_id, 
+                    self.mental_age, 
+                    {
+                        "responses": self.responses,
+                        "intellect_level": self.intellect_level.value if self.intellect_level else None,
+                        "assessment_date": datetime.now().isoformat()
+                    }
+                )
+        except Exception as e:
+            print(f"Error saving user data: {e}")
     
     def _determine_intellect_level(self, mental_age: int) -> IntellectLevel:
         """Determine intellect level based on mental age"""
@@ -172,8 +192,20 @@ class MentalAgeAssessmentChatbot:
         Generate only the question, make it conversational and encouraging.
         """
         
-        question = self.llm.invoke(prompt).content
-        return question
+        try:
+            question = self.llm.invoke(prompt).content
+            return question
+        except Exception as e:
+            print(f"Error generating question: {e}")
+            # Fallback questions
+            fallback_questions = [
+                "What comes next in this pattern: 2, 4, 6, 8, ?",
+                "If you have 3 apples and give away 1, how many do you have left?",
+                "What is the opposite of 'hot'?",
+                "Can you solve this: 5 + 3 = ?",
+                "What do you think happens when ice melts?"
+            ]
+            return fallback_questions[question_number % len(fallback_questions)]
     
     def _analyze_response_and_adjust(self, question: str, response: str) -> Dict[str, Any]:
         """Use LLM to analyze response and determine comprehension level"""
@@ -247,7 +279,7 @@ class MentalAgeAssessmentChatbot:
         except Exception as e:
             print(f"Error calculating mental age: {e}")
             ages = [analysis['estimated_mental_age'] for analysis in all_analyses]
-            return sum(ages) // len(ages)
+            return sum(ages) // len(ages) if ages else 10
     
     def _generate_personalized_response(self, user_message: str, context: str = "") -> str:
         """Generate contextual responses using LLM"""
@@ -257,7 +289,7 @@ class MentalAgeAssessmentChatbot:
             for msg in self.conversation_history[-4:]  
         ])
         
-        stage_context = f"Current stage: {self.stage.value}"
+        stage_context = f"Current stage: {self.stage.value if self.stage else 'welcome'}"
         user_context = ""
         
         if self.mental_age and self.intellect_level:
@@ -284,7 +316,11 @@ class MentalAgeAssessmentChatbot:
         If providing learning guidance, tailor it to their intellect level.
         """
         
-        return self.llm.invoke(prompt).content
+        try:
+            return self.llm.invoke(prompt).content
+        except Exception as e:
+            print(f"Error generating personalized response: {e}")
+            return "I'm here to help you learn! What would you like to know about?"
     
     def _generate_learning_recommendations(self, topic: str = "") -> str:
         """Generate personalized learning recommendations using LLM"""
@@ -321,27 +357,40 @@ class MentalAgeAssessmentChatbot:
         Be specific and practical.
         """
         
-        return self.llm.invoke(prompt).content
+        try:
+            return self.llm.invoke(prompt).content
+        except Exception as e:
+            print(f"Error generating learning recommendations: {e}")
+            return f"Based on your {self.intellect_level.value} level, I recommend focusing on interactive learning activities that match your interests!"
     
-    async def process_message(self,user_message: str) -> Dict[str, Any]:
+    async def process_message(self, user_message: str) -> Dict[str, Any]:
         """Process user message with LLM-powered responses"""
-        print(f"Processing message. Current stage: {self.stage.value}")
+        print(f"Processing message. Current stage: {self.stage.value if self.stage else 'None'}")
+                
+        # Ensure stage is never None
+        if self.stage is None:
+            self.stage = ChatbotStage.WELCOME
         
         self.conversation_history.append(HumanMessage(content=user_message))
         
         response = ""
         additional_data = {}
         
-        if self.stage == ChatbotStage.WELCOME:
-            response = self._handle_welcome(user_message)
-        elif self.stage == ChatbotStage.ASSESSMENT_START:
-            response = self._handle_assessment_start(user_message)
-        elif self.stage == ChatbotStage.ASSESSMENT_IN_PROGRESS:
-            response, additional_data = self._handle_assessment_progress(user_message)
-        elif self.stage == ChatbotStage.ASSESSMENT_COMPLETE:
-            response = self._handle_assessment_complete(user_message)
-        elif self.stage == ChatbotStage.GUIDANCE:
-            response = self._handle_guidance(user_message)
+        try:
+            if self.stage == ChatbotStage.WELCOME:
+                response = self._handle_welcome(user_message)
+            elif self.stage == ChatbotStage.ASSESSMENT_START:
+                response = self._handle_assessment_start(user_message)
+            elif self.stage == ChatbotStage.ASSESSMENT_IN_PROGRESS:
+                response, additional_data = self._handle_assessment_progress(user_message)
+            elif self.stage == ChatbotStage.ASSESSMENT_COMPLETE:
+                response = self._handle_assessment_complete(user_message)
+            elif self.stage == ChatbotStage.GUIDANCE:
+                response = self._handle_guidance(user_message)
+        except Exception as e:
+            print(f"Error in stage handling: {e}")
+            response = "I'm sorry, I encountered an issue. Let me help you with your learning needs!"
+            self.stage = ChatbotStage.GUIDANCE
         
         self.conversation_history.append(AIMessage(content=response))
         
@@ -350,7 +399,7 @@ class MentalAgeAssessmentChatbot:
         
         result = {
             "response": response,
-            "stage": self.stage.value,
+            "stage": self.stage.value if self.stage else "welcome",
             "mental_age": self.mental_age,
             "intellect_level": self.intellect_level.value if self.intellect_level else None,
             "progress": f"{self.current_question}/5" if self.stage == ChatbotStage.ASSESSMENT_IN_PROGRESS else None,
@@ -358,7 +407,7 @@ class MentalAgeAssessmentChatbot:
         }
         result.update(additional_data)
         
-        print(f"Returning response. New stage: {self.stage.value}")
+        print(f"Returning response. New stage: {self.stage.value if self.stage else 'None'}")
         return result
     
     def _handle_welcome(self, user_message: str) -> str:
@@ -475,7 +524,10 @@ Take your time to answer!"""
             print(f"Assessment complete! Stage changed to {self.stage.value}")
             
             # Clear conversation state since assessment is complete
-            self.db.clear_conversation_state(self.user_id)
+            try:
+                self.db.clear_conversation_state(self.user_id)
+            except Exception as e:
+                print(f"Error clearing conversation state: {e}")
             
             response = f"""🎉 Assessment Complete! 
 
@@ -579,7 +631,11 @@ You're doing well - keep thinking it through!"""
         Format as a structured, professional but encouraging report.
         """
         
-        report = self.llm.invoke(prompt).content
+        try:
+            report = self.llm.invoke(prompt).content
+        except Exception as e:
+            print(f"Error generating report: {e}")
+            report = f"Assessment completed with mental age {self.mental_age} and {self.intellect_level.value} level."
         
         return {
             "mental_age": self.mental_age,
@@ -605,6 +661,13 @@ async def initialize_chatbot_session(user_id: int) -> Dict[str, Any]:
         return {
             "initial_response": initial_response,
             "status": "initialized",
+            "user_id": user_id
+        }
+    except Exception as e:
+        print(f"Error initializing chatbot session: {e}")
+        return {
+            "error": str(e),
+            "status": "error",
             "user_id": user_id
         }
     finally:

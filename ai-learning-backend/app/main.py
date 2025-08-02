@@ -1,4 +1,4 @@
-# Entry for fastapi
+# Entry point
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,7 +15,7 @@ import os
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="FastAPI Authentication System", version="1.0.0")
+app = FastAPI(title="Learning Platform", version="1.0.0")
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 app.add_middleware(
@@ -26,7 +26,6 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 )
 
-
 @app.get("/")
 async def root():
     return {"message": "FastAPI Authentication System is running!"}
@@ -35,12 +34,12 @@ async def root():
 async def health_check():
     return {"status": "healthy"}
 
-
+# testing purpose
 @app.get("/users/")
 def read_users(db: Session = Depends(get_db)):
     return db.query(User).all()
 
-# Include routers
+# routers
 app.include_router(auth_router)
 app.include_router(chatbot_router)
 app.include_router(quiz_router)
