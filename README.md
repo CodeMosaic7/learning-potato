@@ -204,10 +204,8 @@ npm run build
 
 The platform uses SQLAlchemy models for:
 - **Users**: User accounts and profiles
-- **Courses**: Learning content and materials
-- **Progress**: Learning progress tracking
 - **Assessments**: Quizzes and evaluations
-- **AI Data**: Recommendation and analytics data
+
 
 ## 🤖 AI Integration
 
