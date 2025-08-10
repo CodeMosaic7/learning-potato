@@ -12,6 +12,7 @@ venv/
 instance/
 *.sqlite3
 *.db
+myenv/
 
 # Byte-compiled / optimized / DLL files
 *.pyo
