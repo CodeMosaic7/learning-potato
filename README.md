@@ -1,4 +1,4 @@
-# AI Learning Platform
+# Adaptive Learning Platform
 
 A modern, AI-powered learning management system built with FastAPI and React, designed to provide personalized educational experiences through intelligent content delivery and assessment.
 
