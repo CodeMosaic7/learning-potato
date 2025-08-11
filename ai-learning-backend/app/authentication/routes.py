@@ -25,7 +25,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(user: UserCreate, db: Session = Depends(get_db)):
     # look for user in database, if it exists
-    existing_user = db.query(User).filter(
+    existing_user = db.query(User).filter(0
         (User.email == user.email) | (User.username == user.username)
     ).first()
     # if user already exists, raise an error

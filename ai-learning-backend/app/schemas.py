@@ -13,6 +13,12 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    @field_validator('email')
+    def validate_email(cls,v):
+        parts = v.split("@")
+        if len(parts) != 2 or not parts[0] or not parts[1]:
+            raise ValueError("Enter a valid email.")
+        return v
 
     @field_validator('password')
     def validate_password(cls, v):
