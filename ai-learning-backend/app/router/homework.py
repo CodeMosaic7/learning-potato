@@ -1,5 +1,3 @@
-# app/routers/homework.py
-
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from app.services.HWhelper.helper import process_homework_image
 

@@ -344,9 +344,7 @@ async def reset_chatbot_session(
 async def chatbot_health_check():
     """Health check endpoint for the chatbot service."""
     try:
-        # You can add more comprehensive health checks here
-        # Like checking LLM API connectivity, database connection, etc.
-        
+            
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={

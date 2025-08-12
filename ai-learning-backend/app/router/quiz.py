@@ -1,5 +1,3 @@
-# app/routers/quiz.py
-
 from fastapi import APIRouter, Body
 from app.services.quiz.quiz_generator import create_quiz
 
