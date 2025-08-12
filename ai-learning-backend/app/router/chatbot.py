@@ -19,12 +19,13 @@ logger = logging.getLogger(__name__)
 @router.post("/initialize", 
              response_model=InitializeChatbotResponse,
              summary="Initialize chatbot session for user",
-             description="Creates a new chatbot session and returns initial welcome message")
+             description="Creates a new chatbot session and returns initial welcome message") #tested-working
 async def initialize_chatbot(
     current_user: dict = Depends(get_current_user),
     db_session = Depends(get_db)
 ):
     """Initialize a new chatbot session for the authenticated user."""
+    print("Inside")
     try:
         print(current_user)
         user_id = getattr(current_user, "id", None)
