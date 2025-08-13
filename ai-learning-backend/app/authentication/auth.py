@@ -44,6 +44,7 @@ def authenticate_user(db: Session, email: str, password: str) -> Union[User, boo
 
 # Extracting token from cookies
 async def get_token_from_cookie(token:Optional[str] = Cookie(None, alias="access_token")):
+    print("Token from cookie:", token)
     if token is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

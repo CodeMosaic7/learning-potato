@@ -74,8 +74,9 @@ async def login_user(login_data: UserLogin,response: Response, db: Session = Dep
         value=access_token,  
         httponly=True,
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        samesite="None",  
-        secure=True,
+        samesite="lax",  
+        secure=False
+        # secure=True,
     
     )
     print(f"DEBUG: Created access token: {access_token[:20]}...")
@@ -84,6 +85,7 @@ async def login_user(login_data: UserLogin,response: Response, db: Session = Dep
 
 @router.get("/me", response_model=UserResponse)
 async def read_users_me(current_user: User = Depends(get_current_user)):
+    print(f"Current user in /me route: {current_user}")
     return current_user
 
 @router.get("/protected")
