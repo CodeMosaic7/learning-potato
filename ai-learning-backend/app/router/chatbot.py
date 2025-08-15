@@ -71,12 +71,13 @@ async def chat_with_bot(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found"
             )
-        
+        print(user_record)
         current_conversation_state = getattr(user_record, 'conversation_state', None)
         logger.info(f"Current conversation state for user {user_id}: {current_conversation_state}")
         
         
         chatbot = create_chatbot(user_id, db_session)
+        response_data = await chatbot.process_message(message.message)
         
         new_stage = response_data.get("stage")
         if new_stage == "assessment_in_progress" and current_conversation_state != "assessment_in_progress":
