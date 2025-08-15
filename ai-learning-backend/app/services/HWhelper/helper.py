@@ -54,6 +54,5 @@ async def process_homework_image(file_bytes: bytes) -> str:
     text = extract_text_from_image(file_bytes)
     if not text.strip():
         raise ValueError("No text found in image.")
-
     
     return await get_conversational_response(text)

@@ -1,5 +1,3 @@
-# app/services/quiz_generator.py
-
 import json
 from app.services.quiz.prompt import build_quiz_prompt
 from app.services.quiz.groq import generate_quiz

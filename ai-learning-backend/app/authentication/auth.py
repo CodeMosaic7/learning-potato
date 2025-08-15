@@ -11,9 +11,7 @@ from app.dependencies import get_db
 from app.models import User
 from app.schemas import TokenData
 
-
 load_dotenv()
-
 # Configuration
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
@@ -29,7 +27,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 def authenticate_user(db: Session, email: str, password: str) -> Union[User, bool]:
     print(f"DEBUG: Looking up user: {email}")
     user = db.query(User).filter(User.email == email).first()
-    
     if not user:
         print(f"DEBUG: User not found: {email}")
         return False
@@ -37,8 +34,7 @@ def authenticate_user(db: Session, email: str, password: str) -> Union[User, boo
     print(f"DEBUG: User found, checking password")
     if not verify_password(password, user.hashed_password):
         print(f"DEBUG: Password verification failed")
-        return False
-        
+        return False        
     print(f"DEBUG: Password verification successful")
     return user
 
@@ -52,6 +48,7 @@ async def get_token_from_cookie(token:Optional[str] = Cookie(None, alias="access
             headers={"WWW-Authenticate": "Bearer"},
         )
     return token
+
 # Dependency to Get Current User
 async def get_current_user(
     token: str = Depends(get_token_from_cookie),
@@ -63,7 +60,6 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
@@ -72,14 +68,12 @@ async def get_current_user(
         token_data = TokenData(email=email)
     except JWTError:
         raise credentials_exception
-    
     user = db.query(User).filter(User.email == token_data.email).first()
     print(user)
     if user is None:
         raise credentials_exception
     
     return user
-
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)

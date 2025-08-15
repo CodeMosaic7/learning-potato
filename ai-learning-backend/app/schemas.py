@@ -4,8 +4,6 @@ from datetime import datetime
 from typing import Optional, List
 
 # === USER SCHEMAS ===
-
-
 class UserBase(BaseModel):
     email: str
     username: str

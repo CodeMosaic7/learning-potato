@@ -680,8 +680,7 @@ async def process_chatbot_message(message: str, user_id: int) -> Dict[str, Any]:
         db_session = SessionLocal()
         try:
             chatbot = create_chatbot(user_id, db_session)
-            response_data = await chatbot.process_message(message)
-            
+            response_data = await chatbot.process_message(message)            
             return {
                 "success": True,
                 "data": response_data
@@ -695,7 +694,6 @@ async def process_chatbot_message(message: str, user_id: int) -> Dict[str, Any]:
             "success": False,
             "error": str(e)
         }
-
 
 def get_learning_insights(user_id: int) -> Dict[str, Any]:
     """Get comprehensive learning insights using LLM"""

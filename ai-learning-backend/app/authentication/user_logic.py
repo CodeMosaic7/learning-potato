@@ -38,8 +38,7 @@ class UserDatabase:
         try:
             # You can either add a new table for conversation_states or 
             # use an existing table with a JSON column
-            
-            # Option 1: If you have a conversation_states table
+            # If you have a conversation_states table
             query = """
             INSERT INTO conversation_states (user_id, state_data, updated_at)
             VALUES (%s, %s, %s)
@@ -60,11 +59,8 @@ class UserDatabase:
             # From conversation_states table
             query = "SELECT state_data FROM conversation_states WHERE user_id = %s"
             result = self.db_session.execute(query, (user_id,)).fetchone()
-            
-           
             # query = "SELECT conversation_state FROM users WHERE id = %s"
             # result = self.db_session.execute(query, (user_id,)).fetchone()
-            
             if result and result[0]:
                 return json.loads(result[0])
             return None
@@ -79,8 +75,7 @@ class UserDatabase:
             # Delete from conversation_states table
             query = "DELETE FROM conversation_states WHERE user_id = %s"
             self.db_session.execute(query, (user_id,))
-            self.db_session.commit()
-            
+            self.db_session.commit()   
             # Update users table
             # query = "UPDATE users SET conversation_state = NULL WHERE id = %s"
             # self.db_session.execute(query, (user_id,))

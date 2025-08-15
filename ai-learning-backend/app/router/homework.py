@@ -58,7 +58,6 @@ async def handle_homework(file: UploadFile = File(...)):
     except Exception as e:
         # Log the actual error for debugging
         logger.error(f"Error processing homework image: {str(e)}", exc_info=True)
-        
         # Return more specific error for image processing failures
         raise HTTPException(
             status_code=500,

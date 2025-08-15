@@ -42,8 +42,7 @@ async def initialize_chatbot(
             initial_response=ChatResponse(**welcome_response),
             status="initialized",
             user_id=user_id
-        )
-        
+        )        
     except Exception as e:
         logger.error(f"Error processing chat message for user {getattr(current_user, 'id', None)}: {str(e)}")
         raise HTTPException(
@@ -362,7 +361,3 @@ async def chatbot_health_check():
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Chatbot service is not healthy"
         )
-
-
-
-

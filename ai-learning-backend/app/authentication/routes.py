@@ -75,13 +75,12 @@ async def login_user(login_data: UserLogin,response: Response, db: Session = Dep
         httponly=True,
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         samesite="lax",  
+        # samesite="None",
         secure=False
-        # secure=True,
-    
+        # secure=True, #Uncomment this for production    
     )
     print(f"DEBUG: Created access token: {access_token[:20]}...")
     return {"access_token": access_token, "token_type": "bearer"}
-
 
 @router.get("/me", response_model=UserResponse)
 async def read_users_me(current_user: User = Depends(get_current_user)):
@@ -97,13 +96,10 @@ async def logout(response: Response):
     response.delete_cookie(key="access_token")
     return {"message": "Logged out successfully"}
 
-
-
 @router.get("/debug-token")
 async def debug_token(request: Request):
     headers = dict(request.headers)
     auth_header = headers.get("authorization", "Not found")
-    
     return {
         "auth_header": auth_header,
         "headers": headers

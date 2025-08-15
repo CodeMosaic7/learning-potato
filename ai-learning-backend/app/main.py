@@ -12,7 +12,6 @@ from app.router.quiz import router as quiz_router
 from app.router.homework import router as hw_router
 import os
 
-
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Learning Platform", version="1.0.0")
