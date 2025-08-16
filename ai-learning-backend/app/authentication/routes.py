@@ -76,8 +76,8 @@ async def login_user(login_data: UserLogin,response: Response, db: Session = Dep
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         samesite="lax",  
         # samesite="None",
-        secure=False
-        # secure=True, #Uncomment this for production    
+        # secure=False
+        secure=True, #Uncomment this for production    
     )
     print(f"DEBUG: Created access token: {access_token[:20]}...")
     return {"access_token": access_token, "token_type": "bearer"}

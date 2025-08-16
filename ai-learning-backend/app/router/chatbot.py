@@ -1,6 +1,10 @@
+from datetime import datetime
+import logging
 from fastapi import APIRouter, Depends,HTTPException, status
-from typing import List, Dict, Any
 from fastapi.responses import JSONResponse
+from typing import List, Dict, Any
+from sqlalchemy.orm import Session
+
 from app.dependencies import get_db
 from app.services.chatbot.chatbot_model import get_learning_insights
 from app.services.chatbot.chatbot_model import create_chatbot, MentalAgeAssessmentChatbot,ChatbotStage
@@ -8,8 +12,6 @@ from app.schemas import ChatMessage, ChatResponse, InitializeChatbotResponse, Ch
 from app.schemas import AssessmentReport,LearningRecommendation,ErrorResponse
 from app.authentication.auth import get_current_user
 from app.authentication.user_logic import UserDatabase
-from datetime import datetime
-import logging
 from app.models import User
 router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
 logging.basicConfig(level=logging.INFO)
@@ -57,35 +59,26 @@ async def initialize_chatbot(
 async def chat_with_bot(
     message: ChatMessage,
     current_user: dict = Depends(get_current_user),
-    db_session = Depends(get_db)
+    db_session: Session = Depends(get_db)
 ):
     """Process a user message through the chatbot."""
     try:
+        # Get user
         user_id = getattr(current_user, "id", None)
-        logger.info(f"Processing message from user {user_id}: {message.message[:50]}...")
-        
+        # logger.info(f"Processing message from user {user_id}: {message.message[:50]}...")
         # current conversation_state
-        user_record = db_session.query(User).filter(User.id == user_id).first()
-        if not user_record:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
-        print(user_record)
+        user_record = db_session.query(User).filter(User.id == user_id).first()        
         current_conversation_state = getattr(user_record, 'conversation_state', None)
         logger.info(f"Current conversation state for user {user_id}: {current_conversation_state}")
-        
-        
+        # Save chatbot instance so that it can maintain state
         chatbot = create_chatbot(user_id, db_session)
         response_data = await chatbot.process_message(message.message)
-        
         new_stage = response_data.get("stage")
         if new_stage == "assessment_in_progress" and current_conversation_state != "assessment_in_progress":
             db_session.query(User).filter(User.id == user_id).update({
                 "conversation_state": "assessment_in_progress"
             })
             db_session.commit()
-
         elif new_stage == "assessment_completed" and current_conversation_state != "assessment_completed":
             db_session.query(User).filter(User.id == user_id).update({
                 "conversation_state": "assessment_completed"
@@ -354,8 +347,7 @@ async def chatbot_health_check():
                 "timestamp": datetime.utcnow().isoformat(),
                 "version": "1.0.0"
             }
-        )
-        
+        )        
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
         raise HTTPException(
