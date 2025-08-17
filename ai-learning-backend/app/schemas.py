@@ -1,11 +1,11 @@
-from pydantic import BaseModel,Field, field_validator
+from pydantic import BaseModel,Field, field_validator,EmailStr
 from typing import Dict, Any
 from datetime import datetime
 from typing import Optional, List
 
 # === USER SCHEMAS ===
 class UserBase(BaseModel):
-    email: str
+    email: EmailStr
     username: str
     full_name: Optional[str] = None
 
@@ -42,7 +42,7 @@ class UserResponse(UserBase):
         from_attributes = True
 
 class UserLogin(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
 class Token(BaseModel):

@@ -3,8 +3,9 @@ from typing import Optional, Union
 import os
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from fastapi import Depends, HTTPException,status,Cookie,Depends
+from fastapi import Depends, HTTPException,status,Cookie,Depends,Request,Response
 from fastapi.security import OAuth2PasswordBearer,HTTPBearer
+
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from app.dependencies import get_db
@@ -39,13 +40,14 @@ def authenticate_user(db: Session, email: str, password: str) -> Union[User, boo
     return user
 
 # Extracting token from cookies
-async def get_token_from_cookie(token:Optional[str] = Cookie(None, alias="access_token")):
+async def get_token_from_cookie(request:Request):
+    token=token = request.cookies.get("access_token")
     print("Token from cookie:", token)
     if token is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
-            headers={"WWW-Authenticate": "Bearer"},
+            headers={"WWW-Authenticate": "Bearer "},
         )
     return token
 
@@ -54,7 +56,7 @@ async def get_current_user(
     token: str = Depends(get_token_from_cookie),
     db: Session = Depends(get_db)
 ) -> User:
-    print("Token",token)
+    print("Token: INSIDE get_current_user",token)
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",

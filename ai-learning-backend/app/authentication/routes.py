@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from datetime import timedelta
+from dotenv import load_dotenv
 
 from app.dependencies import get_db
 from app.models import User
@@ -15,7 +16,7 @@ from app.authentication.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     get_current_user
 )
-from dotenv import load_dotenv
+
 import os
 
 load_dotenv()
@@ -25,7 +26,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(user: UserCreate, db: Session = Depends(get_db)):
     # look for user in database, if it exists
-    existing_user = db.query(User).filter(0
+    existing_user = db.query(User).filter(
         (User.email == user.email) | (User.username == user.username)
     ).first()
     # if user already exists, raise an error
@@ -68,16 +69,17 @@ async def login_user(login_data: UserLogin,response: Response, db: Session = Dep
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
+    # print("DEBUG:",access_token)
     # set access token in response cookies
     response.set_cookie(
         key="access_token",
         value=access_token,  
         httponly=True,
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        samesite="lax",  
-        # samesite="None",
-        # secure=False
-        secure=True, #Uncomment this for production    
+        # samesite="lax",  # "lax" for development, "None" for production
+        samesite="None",
+        #secure=False,
+        secure=True, 
     )
     print(f"DEBUG: Created access token: {access_token[:20]}...")
     return {"access_token": access_token, "token_type": "bearer"}
