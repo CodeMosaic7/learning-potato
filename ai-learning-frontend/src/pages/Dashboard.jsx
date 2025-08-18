@@ -5,7 +5,6 @@ import {
   Upload, BarChart3, Zap, BookOpen, User, Settings, LogOut
 } from 'lucide-react';import Card from '../elements/Card.jsx'
 import Button from '../elements/Button.jsx'
-import Input from '../elements/Input.jsx';
 import Badge from '../elements/Badge.jsx'
 
 

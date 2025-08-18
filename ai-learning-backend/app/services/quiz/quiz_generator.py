@@ -5,6 +5,7 @@ from app.services.quiz.groq import generate_quiz
 import json
 import re
 
+
 def convert_quiz_to_json(quiz_text):
     """
     Convert quiz text format to JSON structure
@@ -64,7 +65,7 @@ def convert_quiz_to_json(quiz_text):
     return quiz_data
 
 
-async def create_quiz(mental_age: int, topic: str, time_limit:int,num_questions: int = 5):
+async def create_quiz(mental_age: int, topic: str, time_limit:int,num_questions:int):
     prompt = build_quiz_prompt(mental_age, topic,time_limit, num_questions)
     response = await generate_quiz(prompt)
 
