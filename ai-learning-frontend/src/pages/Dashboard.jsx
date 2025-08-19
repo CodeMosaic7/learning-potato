@@ -1,3 +1,4 @@
+// rebuild dashboard
 import { useState,useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -98,6 +99,7 @@ const Dashboard = () => {
         </Button>
       </div>
 
+{/*       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
           <Card key={index} className="p-6 animate-slide-up" hover style={{ animationDelay: `${index * 100}ms` }}>
@@ -114,7 +116,7 @@ const Dashboard = () => {
           </Card>
         ))}
       </div>
-
+ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Card className="lg:col-span-2 p-6">
           <h3 className="text-2xl font-semibold text-white mb-6">Recent Activities</h3>
@@ -271,7 +273,6 @@ const Dashboard = () => {
           </div>
         </div>
       </header>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}

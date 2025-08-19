@@ -13,10 +13,10 @@ from app.schemas import AssessmentReport,LearningRecommendation,ErrorResponse
 from app.authentication.auth import get_current_user
 from app.authentication.user_logic import UserDatabase
 from app.models import User
+
 router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 
 @router.post("/initialize", 
              response_model=InitializeChatbotResponse,
@@ -29,16 +29,15 @@ async def initialize_chatbot(
     """Initialize a new chatbot session for the authenticated user."""
     print("Inside")
     try:
-        print(current_user)
+        # 1. get current authenticated user
+        # print(current_user)
         user_id = getattr(current_user, "id", None)
     
         print(f"User ID: {user_id}")
         logger.info(f"Initializing chatbot for user {user_id}")
-        
+        # intialize the chatbot for the user.
         chatbot = create_chatbot(user_id, db_session)
-        
         welcome_response =await chatbot.process_message("Hello! I'm ready to start.")
-        
         return InitializeChatbotResponse(
             session_id=f"chatbot_{user_id}",
             initial_response=ChatResponse(**welcome_response),
@@ -63,11 +62,12 @@ async def chat_with_bot(
 ):
     """Process a user message through the chatbot."""
     try:
-        # Get user
+        # Get user and its existing record
         user_id = getattr(current_user, "id", None)
         # logger.info(f"Processing message from user {user_id}: {message.message[:50]}...")
         # current conversation_state
-        user_record = db_session.query(User).filter(User.id == user_id).first()        
+        user_record = db_session.query(User).filter(User.id == user_id).first() 
+        # get the current conversation state
         current_conversation_state = getattr(user_record, 'conversation_state', None)
         logger.info(f"Current conversation state for user {user_id}: {current_conversation_state}")
         # Save chatbot instance so that it can maintain state
@@ -174,9 +174,7 @@ async def get_assessment_report(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Assessment not completed yet. Please complete the 5-question assessment first."
             )
-        
         return AssessmentReport(**insights)
-        
     except HTTPException:
         raise
     except Exception as e:
