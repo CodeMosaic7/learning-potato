@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import {useNavigate} from 'react-router-dom';
 import { Brain, BookOpen, MessageSquare, Trophy, Users, ArrowRight, Star, PlayCircle, CheckCircle, Zap, Target, Globe } from 'lucide-react';
 
 const Home = () => {
   const [isVisible, setIsVisible] = useState(false);
-
+  const navi = useNavigate();
   // Set isVisible to true on component mount to trigger animations
   useEffect(() => {
     setIsVisible(true);
@@ -12,11 +13,12 @@ const Home = () => {
   // Mock navigation function - replace with actual router navigation
   const navigate = (path) => {
     console.log(`Navigating to: ${path}`);
-    // In a real app, you'd use: navigate(path)
+    navi(path)
+    
   };
 
   const gotologin = () => {
-    navigate('/Login');
+    navi('/Login');
   };
 
   const features = [
