@@ -1,3 +1,5 @@
+# improved code for chatbot model with LLM integration
+# work on resonse generation, conversation state management, and user data handling
 from typing import Optional, Dict, Any, List
 from enum import Enum
 import json
@@ -365,17 +367,14 @@ class MentalAgeAssessmentChatbot:
     
     async def process_message(self, user_message: str) -> Dict[str, Any]:
         """Process user message with LLM-powered responses"""
-        print(f"Processing message. Current stage: {self.stage.value if self.stage else 'None'}")
-                
+        print(f"Processing message. Current stage: {self.stage.value if self.stage else 'None'}")             
         # Ensure stage is never None
         if self.stage is None:
             self.stage = ChatbotStage.WELCOME
         
         self.conversation_history.append(HumanMessage(content=user_message))
-        
         response = ""
         additional_data = {}
-        
         try:
             if self.stage == ChatbotStage.WELCOME:
                 response = self._handle_welcome(user_message)
@@ -391,12 +390,9 @@ class MentalAgeAssessmentChatbot:
             print(f"Error in stage handling: {e}")
             response = "I'm sorry, I encountered an issue. Let me help you with your learning needs!"
             self.stage = ChatbotStage.GUIDANCE
-        
         self.conversation_history.append(AIMessage(content=response))
-        
         # Save conversation state after processing
         self._save_conversation_state()
-        
         result = {
             "response": response,
             "stage": self.stage.value if self.stage else "welcome",
