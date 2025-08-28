@@ -75,7 +75,7 @@ repolib==1.5.1
 # repoman==1.4.0
 requests==2.25.1
 rich==14.0.0
-screen-resolution-extra==0.0.0
+# screen-resolution-extra==0.0.0
 SecretStorage==3.3.1
 sessioninstaller==0.0.0
 six==1.16.0
