@@ -21,7 +21,7 @@ const Dashboard = () => {
     title: "Dynamic Programming: Fibonacci",
     difficulty: "Medium",
     time: "23h 45m left",
-  });
+  }); 
 
   const [path, setPath] = useState({
     current: "Data Structures → Trees",

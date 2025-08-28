@@ -22,3 +22,5 @@ Base = declarative_base()
 if __name__ == "__main__":
     Base.metadata.create_all(bind=engine)
     print("✅ Database and tables created successfully.")
+
+# Mongodb aetup
