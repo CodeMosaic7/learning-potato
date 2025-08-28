@@ -72,7 +72,7 @@ pytz==2022.1
 pyxdg==0.27
 PyYAML>=6.0
 repolib==1.5.1
-repoman==1.4.0
+# repoman==1.4.0
 requests==2.25.1
 rich==14.0.0
 screen-resolution-extra==0.0.0
