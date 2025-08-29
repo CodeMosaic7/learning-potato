@@ -250,10 +250,8 @@ async def restart_assessment(
         chatbot.intellect_level = None
         chatbot.current_question = 0
         chatbot.responses = []
-        
         # Start assessment
         response_data = chatbot.process_message("Yes, I want to restart the assessment")
-        
         return ChatResponse(**response_data)
         
     except Exception as e:
@@ -310,10 +308,8 @@ async def reset_chatbot_session(
     try:
         user_id = getattr(current_user, "id", None)
         logger.info(f"Resetting chatbot session for user {user_id}")
-        
         # This would typically clear session data, conversation history, etc.
         # You might want to implement session management in your database
-        
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={

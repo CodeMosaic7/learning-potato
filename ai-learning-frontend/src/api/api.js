@@ -48,6 +48,33 @@ export const loginUser = async (email,password) => {
       };
     }
   };
+export async function logoutUser(){
+  try{
+    const res= await API.post('/auth/logout');
+    // return res.data;
+    sessionStorage.clear();
+    window.location.href = '/login';
+    return {success:true};
+  }
+  catch(error){
+    throw new Error("Logout failed"); 
+  }
+}
+
+
+export async function userdetails(token){
+  try{
+    const res= await API.get('/auth/me',{
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return res.data;
+  }
+  catch(error){
+    throw new Error("Fetching user details failed"); 
+  }
+}
 
 export async function getCurrentUser(token) {
   console.log("Using token:", token);
