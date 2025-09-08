@@ -402,7 +402,7 @@ class MentalAgeAssessmentChatbot:
             "user_id": self.user_id
         }
         result.update(additional_data)
-        
+        # db_session.commit()
         print(f"Returning response. New stage: {self.stage.value if self.stage else 'None'}")
         return result
     

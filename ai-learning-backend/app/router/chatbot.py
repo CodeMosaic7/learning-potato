@@ -62,18 +62,19 @@ async def chat_with_bot(
 ):
     """Process a user message through the chatbot."""
     try:
-        # Get user and its existing record
-        user_id = getattr(current_user, "id", None)
-        # logger.info(f"Processing message from user {user_id}: {message.message[:50]}...")
-        # current conversation_state
+        print("Debug:Chatting with bot")
+        # print(current_user.id)
+        user_id = current_user.id
+        # ISSUE: Current conversation state not updating properly in DB
         user_record = db_session.query(User).filter(User.id == user_id).first() 
         # get the current conversation state
-        current_conversation_state = getattr(user_record, 'conversation_state', None)
+        current_conversation_state = getattr(user_record, "conversation_state", "not_started")
         logger.info(f"Current conversation state for user {user_id}: {current_conversation_state}")
         # Save chatbot instance so that it can maintain state
         chatbot = create_chatbot(user_id, db_session)
         response_data = await chatbot.process_message(message.message)
         new_stage = response_data.get("stage")
+        
         if new_stage == "assessment_in_progress" and current_conversation_state != "assessment_in_progress":
             db_session.query(User).filter(User.id == user_id).update({
                 "conversation_state": "assessment_in_progress"
@@ -121,6 +122,7 @@ async def chat_with_bot(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process message: {str(e)}"
         )
+    
 @router.get("/status",
             response_model=ChatbotStatus,
             summary="Get chatbot status",

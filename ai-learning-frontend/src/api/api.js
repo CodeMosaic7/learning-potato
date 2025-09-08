@@ -1,8 +1,6 @@
-// src/api/api.js
 import API from './config';
 
 // Auth APIs
-
 export async function registerUser(email, username, full_name, password) {
   try {
     const res = await API.post('/auth/register', {
@@ -23,7 +21,6 @@ export const loginUser = async (email,password) => {
       if (!email || !password) {
         throw new Error('Email and password are required');
       }
-      
       const response = await API.post('/auth/login', {
         email,
         password
@@ -32,22 +29,16 @@ export const loginUser = async (email,password) => {
           'Content-Type': 'application/json',
         },
       });
-
       console.log('Login successful:');
       // user=getCurrentUser(response.data.access_token);
       // console.log(user) // Fetch user profile after login
-      return { 
-        success: true, 
-        
-      };
+      return {success: true,};
     } catch (error) {
       console.error('Login failed:');
-      
-      return { 
-        success: false,
-      };
+      return { success: false,};
     }
   };
+
 export async function logoutUser(){
   try{
     const res= await API.post('/auth/logout');
@@ -60,7 +51,6 @@ export async function logoutUser(){
     throw new Error("Logout failed"); 
   }
 }
-
 
 export async function userdetails(token){
   try{
@@ -100,7 +90,6 @@ export async function debugToken(token) {
 }
 
 // Quiz Generator API
-
 export async function generateQuiz(mental_age, topic,time_limit, num_questions = 5) {
   try {
     const res = await API.post('/quiz/', {
@@ -116,7 +105,6 @@ export async function generateQuiz(mental_age, topic,time_limit, num_questions =
 }
 
 // Homework Upload API
-
 export async function uploadHomeworkImage(file) {
   if (!file.type.startsWith('image/')) {
     throw new Error('Please select an image file');
@@ -227,5 +215,3 @@ export async function getChatbotStatus(sessionId) {
     throw new Error(error.response?.data?.detail || `Status Check Error: ${error.message}`);
   }
 }
-
-

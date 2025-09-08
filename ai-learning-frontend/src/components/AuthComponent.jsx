@@ -6,8 +6,6 @@ import Button from "../elements/Button.jsx";
 import { Brain, Zap } from "lucide-react";
 import { registerUser, loginUser, getCurrentUser } from "../api/api.js";
 
-
-
 const AuthComponent = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
@@ -57,7 +55,6 @@ const AuthComponent = () => {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-900 via-primary-900 to-dark-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md animate-fade-in">
@@ -117,7 +114,6 @@ const AuthComponent = () => {
                 setFormData({ ...formData, password: e.target.value })
               }
             />
-
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
@@ -132,7 +128,6 @@ const AuthComponent = () => {
               )}
             </Button>
           </form>
-
           <div className="mt-8 text-center">
             <button
               onClick={() => setIsLogin(!isLogin)}
