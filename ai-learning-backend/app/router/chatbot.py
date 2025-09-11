@@ -67,10 +67,19 @@ async def chat_with_bot(
         user_id = current_user.id
         # ISSUE: Current conversation state not updating properly in DB
         user_record = db_session.query(User).filter(User.id == user_id).first() 
+
         # get the current conversation state
         current_conversation_state = getattr(user_record, "conversation_state", "not_started")
         logger.info(f"Current conversation state for user {user_id}: {current_conversation_state}")
-        # Save chatbot instance so that it can maintain state
+
+        # Issue:
+        # Chatbot is getting reinitialized every time losing the state.
+        # Need to implement session management to persist chatbot state between requests.
+        # Solution:
+        # 1. Store chatbot state in DB or cache (e.g., Redis) tied to user session.
+        # 2. Retrieve and restore chatbot state on each request.
+        # 3. Update state in DB/cache after processing each message.
+        
         chatbot = create_chatbot(user_id, db_session)
         response_data = await chatbot.process_message(message.message)
         new_stage = response_data.get("stage")
