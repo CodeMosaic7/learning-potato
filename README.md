@@ -251,5 +251,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Open source contributors and maintainers
 
 ---
+## Screenshots
+Chatbot
+<img width="1852" height="954" alt="image" src="https://github.com/user-attachments/assets/57abe596-8c86-4a93-be7d-c19684a83923" />
+
+---
 
 Built with ❤️ using FastAPI and React
