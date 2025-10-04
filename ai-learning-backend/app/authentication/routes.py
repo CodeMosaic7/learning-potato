@@ -32,15 +32,16 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
     # if user already exists, raise an error
     if existing_user:
         if existing_user.email == user.email:
+            print(user.email)
             raise HTTPException(status_code=400, detail="Email already registered")
         else:
             raise HTTPException(status_code=400, detail="Username already taken")
     # else create a new user
     hashed_password = get_password_hash(user.password)
     db_user = User(
-        email=user.email,
-        username=user.username,
         full_name=user.full_name,
+        username=user.username,
+        email=user.email,        
         hashed_password=hashed_password
     )
     try:

@@ -4,9 +4,9 @@ import API from './config';
 export async function registerUser(email, username, full_name, password) {
   try {
     const res = await API.post('/auth/register', {
-      email,
-      username,
       full_name,
+      username,
+      email,
       password
     });
     return res.data;

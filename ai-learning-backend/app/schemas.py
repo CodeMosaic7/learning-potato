@@ -10,26 +10,11 @@ class UserBase(BaseModel):
     full_name: Optional[str] = None
 
 class UserCreate(UserBase):
+    full_name:str
+    username:str
+    email:str
     password: str
-    @field_validator('email')
-    def validate_email(cls,v):
-        parts = v.split("@")
-        if len(parts) != 2 or not parts[0] or not parts[1]:
-            raise ValueError("Enter a valid email.")
-        return v
-
-    @field_validator('password')
-    def validate_password(cls, v):
-        if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters long')
-        return v
-
-    @field_validator('username')
-    def validate_username(cls, v):
-        if len(v) < 3:
-            raise ValueError('Username must be at least 3 characters long')
-        return v
-
+  
 class UserResponse(UserBase):
     id: int
     is_active: bool

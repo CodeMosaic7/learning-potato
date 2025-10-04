@@ -55,6 +55,7 @@ async def initialize_chatbot(
              response_model=ChatResponse,
              summary="Send message to chatbot",
              description="Process user message and get AI-powered response")
+
 async def chat_with_bot(
     message: ChatMessage,
     current_user: dict = Depends(get_current_user),

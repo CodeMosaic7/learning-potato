@@ -20,20 +20,17 @@ const AuthComponent = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
       let response;
-
       if (isLogin) {
-        response = await loginUser(formData.email, formData.password);      
-          
+        response = await loginUser(formData.email, formData.password);                
       } else {
         response = await registerUser(
-          formData.full_name,
-          formData.email,
-          formData.username,
-          formData.password
-        );}
+    formData.email,      // email first
+    formData.username,   // username second
+    formData.full_name,  // full_name third
+    formData.password    // password fourth
+);}
       
       console.log("Registration Response:", response);
       const user = await getCurrentUser(response.access_token);
@@ -41,9 +38,7 @@ const AuthComponent = () => {
       sessionStorage.setItem("user_data", JSON.stringify(user));
       console.log("User Data:", user);
       navigation("/dashboard");
-
       console.log("Current User:", user);
-      
     } catch (error) {
       console.error("Authentication Error:", error);
       alert(
