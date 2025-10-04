@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import {useNavigate} from 'react-router-dom';
 import { Brain, BookOpen, MessageSquare, Trophy, Users, ArrowRight, Star, PlayCircle, CheckCircle, Zap, Target, Globe } from 'lucide-react';
+import Header from '../components/Header';
 
 const Home = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -17,9 +18,7 @@ const Home = () => {
     
   };
 
-  const gotologin = () => {
-    navi('/Login');
-  };
+  
 
   const features = [
     {
@@ -56,30 +55,9 @@ const Home = () => {
         <div className="absolute top-3/4 right-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
         <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl animate-pulse" style={{animationDelay: '2s'}}></div>
       </div>
-
+      <Header />
       {/* Navigation */}
-      <nav className="relative z-10 container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <Brain className="w-10 h-10 text-purple-400" />
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-ping"></div>
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              AI Learning Platform
-            </span>
-          </div>
-          <div className="hidden md:flex items-center space-x-8">
-            <a href="#features" className="text-gray-300 hover:text-purple-400 transition-colors duration-300">Features</a>
-            <a href="#about" className="text-gray-300 hover:text-purple-400 transition-colors duration-300">About</a>
-            <button
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 px-6 py-2 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-purple-500/25"
-              onClick={gotologin}>
-              Login
-            </button>
-          </div>
-        </div>
-      </nav>
+      
 
       {/* Hero Section */}
       <section className="relative z-10 container mx-auto px-6 py-20">
