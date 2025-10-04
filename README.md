@@ -253,7 +253,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 ## Screenshots
 Chatbot
+
 <img width="1852" height="954" alt="image" src="https://github.com/user-attachments/assets/57abe596-8c86-4a93-be7d-c19684a83923" />
+
+<img width="1852" height="954" alt="image" src="https://github.com/user-attachments/assets/2b1f77a0-f32c-4d6f-99e3-efc47f91801b" />
+
 
 ---
 
