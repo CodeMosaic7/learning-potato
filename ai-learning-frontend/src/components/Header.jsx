@@ -1,6 +1,9 @@
+import { useNavigate } from "react-router-dom";
 import { Brain } from "lucide-react";
 
+
 const Header = () => {
+    const navi= useNavigate();
     const gotologin = () => {
     navi('/Login');
   };

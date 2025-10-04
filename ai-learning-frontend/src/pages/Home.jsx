@@ -5,20 +5,11 @@ import Header from '../components/Header';
 
 const Home = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const navi = useNavigate();
+  
   // Set isVisible to true on component mount to trigger animations
   useEffect(() => {
     setIsVisible(true);
   }, []);
-
-  // Mock navigation function - replace with actual router navigation
-  const navigate = (path) => {
-    console.log(`Navigating to: ${path}`);
-    navi(path)
-    
-  };
-
-  
 
   const features = [
     {
