@@ -44,8 +44,8 @@ Before running this application, make sure you have:
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd learning-platform
+git clone https://github.com/CodeMosaic7/learning-potato
+cd learning-potato
 ```
 
 ### 2. Backend Setup
@@ -70,7 +70,7 @@ pip install -r requirements.txt
 python -m alembic upgrade head
 
 # Start the FastAPI server
-python main.py
+uvicorn app.main:app --reload
 ```
 
 The API will be available at `http://localhost:8000`
@@ -95,7 +95,7 @@ The frontend will be available at `http://localhost:5173`
 ## 📁 Project Structure
 
 ```
-learning-platform/
+learning-potato/
 ├── ai-learning-backend/
 │   ├── app/
 │   │   ├── __pycache__/
@@ -191,7 +191,7 @@ npm run test
 
 ```bash
 pip install uvicorn[standard]
-uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
 ### Frontend Deployment
