@@ -89,6 +89,9 @@ async def login_user(login_data: UserLogin,response: Response, db: Session = Dep
 async def read_users_me(current_user: User = Depends(get_current_user)):
     print(f"Current user in /me route: {current_user}")
     return current_user
+@router.get("/user-details", response_model=UserResponse)
+async def get_user_details(current_user: User = Depends(get_current_user)):
+    return current_user
 
 @router.get("/protected")
 async def protected_route(current_user: User = Depends(get_current_user)):

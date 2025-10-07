@@ -21,7 +21,6 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch complete dashboard data
       const response = await fetch('/api/v1/dashboard', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -39,280 +38,298 @@ const Dashboard = () => {
 
   const getIntellectLevelColor = (level) => {
     const colors = {
-      "Beginner": "bg-blue-500/20 text-blue-300 border-blue-400",
-      "Intermediate": "bg-green-500/20 text-green-300 border-green-400",
-      "Advanced": "bg-purple-500/20 text-purple-300 border-purple-400",
-      "Expert": "bg-orange-500/20 text-orange-300 border-orange-400"
+      "Beginner": "bg-blue-100 text-blue-700 border border-blue-300",
+      "Intermediate": "bg-green-100 text-green-700 border border-green-300",
+      "Advanced": "bg-purple-100 text-purple-700 border border-purple-300",
+      "Expert": "bg-orange-100 text-orange-700 border border-orange-300"
     };
-    return colors[level] || "bg-gray-500/20 text-gray-300 border-gray-400";
+    return colors[level] || "bg-gray-100 text-gray-700 border border-gray-300";
   };
 
   const getActivityIcon = (type) => {
     const icons = {
-      quiz: <BookOpen className="w-5 h-5 text-blue-400" />,
-      homework: <Pencil className="w-5 h-5 text-green-400" />,
-      badge: <Award className="w-5 h-5 text-yellow-400" />,
-      assessment: <Brain className="w-5 h-5 text-purple-400" />
+      quiz: <BookOpen className="w-5 h-5 text-blue-500" />,
+      homework: <Pencil className="w-5 h-5 text-green-500" />,
+      badge: <Award className="w-5 h-5 text-yellow-500" />,
+      assessment: <Brain className="w-5 h-5 text-purple-500" />
     };
-    return icons[type] || <Star className="w-5 h-5 text-gray-400" />;
+    return icons[type] || <Star className="w-5 h-5 text-gray-500" />;
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-blue-800 to-slate-900">
-        <div className="text-white text-xl">Loading your learning journey...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-gray-900 text-xl font-medium">Loading your learning journey...</div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-900 via-blue-800 to-slate-900 text-white overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-3/4 right-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl animate-pulse"></div>
-      </div>
-
-      {/* Header */}
+    <div className="flex flex-col min-h-screen bg-gray-50 text-gray-900">
       <Header />
 
-      {/* Main Content */}
-      <div className="relative z-10 flex-grow container mx-auto px-6 py-8 space-y-8">
+      <div className="flex-grow container mx-auto px-6 py-8 space-y-6 max-w-7xl">
         
-        {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-purple-600/30 to-pink-600/30 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/30">
-          <div className="flex items-center justify-between">
+        {/* Welcome Section - Black Card */}
+        <div className="bg-black rounded-3xl p-8 text-white shadow-xl">
+          <div className="flex items-center justify-between flex-wrap gap-6">
             <div>
-              <h1 className="text-3xl font-bold">Welcome back, {userData?.name || 'Learner'}! 🎉</h1>
-              <p className="text-gray-300 mt-2">Keep up the amazing work! You're doing great!</p>
+              <h1 className="text-4xl font-bold mb-2">Hi, {userData?.name || 'User'}!</h1>
+              <p className="text-gray-400 text-lg">Keep up the amazing work! You're doing great!</p>
             </div>
             {userData?.mental_age && (
-              <div className="text-center bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                <Brain className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-300">Mental Age</p>
-                <p className="text-2xl font-bold">{userData.mental_age}</p>
-                <Badge className={`mt-2 ${getIntellectLevelColor(userData?.intellect_level)}`}>
+              <div className="text-center bg-gray-900 rounded-2xl p-6 border border-gray-800 min-w-[160px]">
+                <Brain className="w-10 h-10 text-purple-400 mx-auto mb-3" />
+                <p className="text-sm text-gray-400 mb-1">Mental Age</p>
+                <p className="text-3xl font-bold mb-3">{userData.mental_age}</p>
+                <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getIntellectLevelColor(userData?.intellect_level)}`}>
                   {userData?.intellect_level}
-                </Badge>
+                </span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Key Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          <Card>
-            <p className="text-gray-400 text-sm">Quizzes Completed</p>
-            <h2 className="text-2xl font-bold">{dashboardData?.quiz_stats.completed_quizzes || 0}</h2>
-            <Trophy className="w-6 h-6 text-yellow-400 mt-2" />
-          </Card>
-          <Card>
-            <p className="text-gray-400 text-sm">Learning Streak</p>
-            <h2 className="text-2xl font-bold">{dashboardData?.learning_streak || 0} days</h2>
-            <Flame className="w-6 h-6 text-orange-400 mt-2" />
-          </Card>
-          <Card>
-            <p className="text-gray-400 text-sm">Average Score</p>
-            <h2 className="text-2xl font-bold">{dashboardData?.quiz_stats.average_score || 0}%</h2>
-            <TrendingUp className="w-6 h-6 text-green-400 mt-2" />
-          </Card>
-          <Card>
-            <p className="text-gray-400 text-sm">Homework Done</p>
-            <h2 className="text-2xl font-bold">{dashboardData?.homework_stats.completed_homework || 0}</h2>
-            <CheckCircle className="w-6 h-6 text-blue-400 mt-2" />
-          </Card>
-          <Card>
-            <p className="text-gray-400 text-sm">Badges Earned</p>
-            <h2 className="text-2xl font-bold">{dashboardData?.badges_earned?.length || 0}</h2>
-            <Award className="w-6 h-6 text-purple-400 mt-2" />
-          </Card>
+        {/* Key Stats - White Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <p className="text-gray-500 text-sm font-medium mb-2">Quizzes Completed</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">{dashboardData?.quiz_stats.completed_quizzes || 0}</h2>
+            <Trophy className="w-6 h-6 text-yellow-500" />
+          </div>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <p className="text-gray-500 text-sm font-medium mb-2">Learning Streak</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">{dashboardData?.learning_streak || 0} <span className="text-lg text-gray-500">days</span></h2>
+            <Flame className="w-6 h-6 text-orange-500" />
+          </div>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <p className="text-gray-500 text-sm font-medium mb-2">Average Score</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">{dashboardData?.quiz_stats.average_score || 0}%</h2>
+            <TrendingUp className="w-6 h-6 text-green-500" />
+          </div>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <p className="text-gray-500 text-sm font-medium mb-2">Homework Done</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">{dashboardData?.homework_stats.completed_homework || 0}</h2>
+            <CheckCircle className="w-6 h-6 text-blue-500" />
+          </div>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <p className="text-gray-500 text-sm font-medium mb-2">Badges Earned</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">{dashboardData?.badges_earned?.length || 0}</h2>
+            <Award className="w-6 h-6 text-purple-500" />
+          </div>
         </div>
 
         {/* Assessment Progress */}
         {userData?.assessment_progress !== 'completed' && (
-          <Card>
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-semibold flex items-center space-x-2">
-                  <Brain className="w-5 h-5 text-purple-400" />
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex-1 min-w-[250px]">
+                <h3 className="text-xl font-semibold flex items-center gap-2 text-gray-900 mb-2">
+                  <Brain className="w-6 h-6 text-purple-500" />
                   <span>Complete Your Assessment</span>
                 </h3>
-                <p className="mt-2 text-gray-300">Discover your learning style and intellectual age!</p>
-                <p className="text-sm text-gray-400 mt-1">Progress: {userData?.assessment_progress || '0%'}</p>
+                <p className="text-gray-600 mb-2">Discover your learning style and intellectual age!</p>
+                <p className="text-sm text-gray-500">Progress: {userData?.assessment_progress || '0%'}</p>
               </div>
-              <Button onClick={() => window.location.href = '/assessment'}>
-                {userData?.assessment_progress ? 'Continue' : 'Start Now'} <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
+              <button 
+                onClick={() => window.location.href = '/assessment'}
+                className="bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition-colors flex items-center gap-2"
+              >
+                {userData?.assessment_progress ? 'Continue' : 'Start Now'} 
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Homework Section */}
         {dashboardData?.homework_stats.pending_homework > 0 && (
-          <Card>
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-semibold flex items-center space-x-2">
-                  <Pencil className="w-5 h-5 text-green-400" />
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex-1 min-w-[250px]">
+                <h3 className="text-xl font-semibold flex items-center gap-2 text-gray-900 mb-2">
+                  <Pencil className="w-6 h-6 text-green-500" />
                   <span>Pending Homework</span>
                 </h3>
-                <p className="mt-2 text-lg">You have {dashboardData.homework_stats.pending_homework} homework assignments to complete</p>
-                <div className="mt-3 bg-gray-700/50 rounded-full h-2 overflow-hidden">
+                <p className="text-lg text-gray-700 mb-3">You have <span className="font-semibold">{dashboardData.homework_stats.pending_homework}</span> homework assignments to complete</p>
+                <div className="bg-gray-200 rounded-full h-2.5 overflow-hidden mb-2">
                   <div 
-                    className="bg-green-400 h-full transition-all duration-500"
+                    className="bg-green-500 h-full transition-all duration-500 rounded-full"
                     style={{ width: `${dashboardData.homework_stats.submission_rate}%` }}
                   ></div>
                 </div>
-                <p className="text-sm text-gray-400 mt-1">Submission Rate: {dashboardData.homework_stats.submission_rate}%</p>
+                <p className="text-sm text-gray-500">Submission Rate: {dashboardData.homework_stats.submission_rate}%</p>
               </div>
-              <Button onClick={() => window.location.href = '/homework'}>
-                View All <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
+              <button 
+                onClick={() => window.location.href = '/homework'}
+                className="bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition-colors flex items-center gap-2"
+              >
+                View All 
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Quiz Generator & Recent Scores */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <h3 className="text-xl font-semibold mb-4 flex items-center space-x-2">
-              <Sparkles className="w-5 h-5 text-yellow-400" />
+          {/* Quiz Generator - Black Card */}
+          <div className="bg-black rounded-2xl p-7 shadow-xl text-white">
+            <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-yellow-400" />
               <span>Generate Quiz</span>
             </h3>
-            <p className="text-gray-300 mb-4">Create a personalized quiz on any topic!</p>
+            <p className="text-gray-400 mb-5">Create a personalized quiz on any topic!</p>
             <div className="space-y-3">
               <input 
                 type="text" 
                 placeholder="Enter a topic (e.g., Math, Science, History)"
-                className="w-full px-4 py-2 bg-gray-700/50 rounded-lg border border-gray-600 focus:border-purple-400 focus:outline-none"
+                className="w-full px-4 py-3 bg-gray-900 rounded-xl border border-gray-800 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-white placeholder-gray-500 transition-all"
               />
-              <div className="flex gap-2">
-                <select className="px-4 py-2 bg-gray-700/50 rounded-lg border border-gray-600 focus:border-purple-400 focus:outline-none">
+              <div className="flex gap-3">
+                <select className="px-4 py-3 bg-gray-900 rounded-xl border border-gray-800 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-white transition-all">
                   <option>Easy</option>
                   <option>Medium</option>
                   <option>Hard</option>
                 </select>
-                <Button className="flex-1">Generate Quiz</Button>
+                <button className="flex-1 bg-white text-black px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-colors">
+                  Generate Quiz
+                </button>
               </div>
             </div>
-          </Card>
+          </div>
 
-          <Card>
-            <h3 className="text-xl font-semibold mb-4 flex items-center space-x-2">
-              <BarChart3 className="w-5 h-5 text-blue-400" />
+          {/* Recent Scores - White Card */}
+          <div className="bg-white rounded-2xl p-7 shadow-sm border border-gray-200">
+            <h3 className="text-xl font-semibold mb-5 flex items-center gap-2 text-gray-900">
+              <BarChart3 className="w-6 h-6 text-blue-500" />
               <span>Recent Quiz Scores</span>
             </h3>
             <div className="space-y-3">
               {dashboardData?.quiz_stats.recent_scores?.map((score, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center font-bold">
+                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center font-bold text-white">
                       {idx + 1}
                     </div>
-                    <span>Quiz #{dashboardData.quiz_stats.completed_quizzes - idx}</span>
+                    <span className="text-gray-900 font-medium">Quiz #{dashboardData.quiz_stats.completed_quizzes - idx}</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="text-right">
-                      <p className="font-bold text-lg">{score}%</p>
-                    </div>
-                    {score >= 90 ? <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" /> : null}
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-xl text-gray-900">{score}%</p>
+                    {score >= 90 && <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />}
                   </div>
                 </div>
               ))}
               {(!dashboardData?.quiz_stats.recent_scores || dashboardData.quiz_stats.recent_scores.length === 0) && (
-                <p className="text-gray-400 text-center py-4">No quizzes completed yet. Start your first quiz!</p>
+                <div className="text-center py-8">
+                  <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No quizzes completed yet. Start your first quiz!</p>
+                </div>
               )}
             </div>
-          </Card>
+          </div>
         </div>
 
         {/* Badges & Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <h3 className="text-xl font-semibold mb-4 flex items-center space-x-2">
-              <Award className="w-5 h-5 text-yellow-400" />
+          {/* Badges - White Card */}
+          <div className="bg-white rounded-2xl p-7 shadow-sm border border-gray-200">
+            <h3 className="text-xl font-semibold mb-5 flex items-center gap-2 text-gray-900">
+              <Award className="w-6 h-6 text-yellow-500" />
               <span>Badges Earned</span>
             </h3>
             <div className="grid grid-cols-2 gap-3">
               {dashboardData?.badges_earned?.map((badge, idx) => (
-                <div key={idx} className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-lg p-4 border border-yellow-500/30 text-center">
-                  <Trophy className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
-                  <p className="text-sm font-semibold">{badge}</p>
+                <div key={idx} className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-5 border border-yellow-200 text-center hover:shadow-md transition-all cursor-pointer">
+                  <Trophy className="w-10 h-10 text-yellow-500 mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-gray-900">{badge}</p>
                 </div>
               ))}
               {(!dashboardData?.badges_earned || dashboardData.badges_earned.length === 0) && (
-                <div className="col-span-2 text-gray-400 text-center py-4">
-                  <p>Complete challenges to earn badges! 🏆</p>
+                <div className="col-span-2 text-center py-8">
+                  <Trophy className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">Complete challenges to earn badges!</p>
                 </div>
               )}
             </div>
-          </Card>
+          </div>
 
-          <Card>
-            <h3 className="text-xl font-semibold mb-4 flex items-center space-x-2">
-              <MessageSquare className="w-5 h-5 text-green-400" />
+          {/* Recent Activity - White Card */}
+          <div className="bg-white rounded-2xl p-7 shadow-sm border border-gray-200">
+            <h3 className="text-xl font-semibold mb-5 flex items-center gap-2 text-gray-900">
+              <MessageSquare className="w-6 h-6 text-green-500" />
               <span>Recent Activity</span>
             </h3>
             <ul className="space-y-3">
               {dashboardData?.recent_activities?.map((activity, idx) => (
-                <li key={idx} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    {getActivityIcon(activity.type)}
-                    <div>
-                      <p className="font-medium">{activity.description}</p>
-                      <p className="text-xs text-gray-400">{activity.timestamp}</p>
+                <li key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex-shrink-0">
+                      {getActivityIcon(activity.type)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-900 truncate">{activity.description}</p>
+                      <p className="text-xs text-gray-500">{activity.timestamp}</p>
                     </div>
                   </div>
-                  <Badge className="bg-purple-500/20 text-purple-300">
+                  <span className="ml-3 bg-purple-100 text-purple-700 border border-purple-200 px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0">
                     +{activity.points} XP
-                  </Badge>
+                  </span>
                 </li>
               ))}
               {(!dashboardData?.recent_activities || dashboardData.recent_activities.length === 0) && (
-                <p className="text-gray-400 text-center py-4">No recent activity. Start learning!</p>
+                <div className="text-center py-8">
+                  <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No recent activity. Start learning!</p>
+                </div>
               )}
             </ul>
-          </Card>
+          </div>
         </div>
 
-        {/* Homework Help Section */}
-        <Card>
-          <h3 className="text-xl font-semibold mb-4 flex items-center space-x-2">
-            <Lightbulb className="w-5 h-5 text-yellow-400" />
+        {/* Homework Help Section - White Card */}
+        <div className="bg-white rounded-2xl p-7 shadow-sm border border-gray-200">
+          <h3 className="text-xl font-semibold mb-2 flex items-center gap-2 text-gray-900">
+            <Lightbulb className="w-6 h-6 text-yellow-500" />
             <span>Need Homework Help?</span>
           </h3>
-          <p className="text-gray-300 mb-4">Upload your homework and get instant help!</p>
-          <div className="flex gap-4">
-            <Button className="flex-1" onClick={() => window.location.href = '/homework-help'}>
-              <Upload className="w-4 h-4 mr-2" />
+          <p className="text-gray-600 mb-5">Upload your homework and get instant help!</p>
+          <div className="flex flex-wrap gap-3">
+            <button 
+              className="flex-1 min-w-[200px] bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+              onClick={() => window.location.href = '/homework-help'}
+            >
+              <Upload className="w-5 h-5" />
               Upload Homework
-            </Button>
-            <Button variant="outline" onClick={() => window.location.href = '/ai-tutor'}>
-              <MessageSquare className="w-4 h-4 mr-2" />
+            </button>
+            <button 
+              className="flex-1 min-w-[200px] bg-white text-gray-900 border-2 border-gray-300 px-6 py-3 rounded-xl font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+              onClick={() => window.location.href = '/ai-tutor'}
+            >
+              <MessageSquare className="w-5 h-5" />
               Ask AI Tutor
-            </Button>
+            </button>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Footer */}
-      <footer className="z-10 container mx-auto px-6 py-12 border-t border-purple-500/30">
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          <div className="flex items-center space-x-3 mb-4 md:mb-0">
-            <Brain className="w-8 h-8 text-purple-400" />
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+      <footer className="container mx-auto px-6 py-12 border-t border-gray-200 max-w-7xl">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-3">
+            <Brain className="w-8 h-8 text-purple-500" />
+            <span className="text-xl font-bold text-gray-900">
               Kids Learning Platform
             </span>
           </div>
-          <div className="flex space-x-6 text-gray-400">
-            <a href="#" className="hover:text-purple-400 transition-colors">Privacy</a>
-            <a href="#" className="hover:text-purple-400 transition-colors">Terms</a>
-            <a href="#" className="hover:text-purple-400 transition-colors">Support</a>
-            <a href="#" className="hover:text-purple-400 transition-colors">Contact</a>
+          <div className="flex flex-wrap justify-center gap-6 text-gray-600">
+            <a href="#" className="hover:text-purple-500 transition-colors font-medium">Privacy</a>
+            <a href="#" className="hover:text-purple-500 transition-colors font-medium">Terms</a>
+            <a href="#" className="hover:text-purple-500 transition-colors font-medium">Support</a>
+            <a href="#" className="hover:text-purple-500 transition-colors font-medium">Contact</a>
           </div>
         </div>
-        <div className="text-center text-gray-500 mt-8">
+        <div className="text-center text-gray-500 mt-8 text-sm">
           © 2025 Kids Learning Platform. All rights reserved.
         </div>
       </footer>

@@ -37,6 +37,18 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
 
+class UserDetails(UserBase):
+    id: int
+    is_active: bool
+    is_verified: bool
+    created_at: datetime
+    mental_age: Optional[int] = None
+    intellect_level: Optional[str] = None
+    assesment_progress: Optional[str] = None
+    assessment_date: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
 
 # === CHATBOT SCHEMAS ===
 

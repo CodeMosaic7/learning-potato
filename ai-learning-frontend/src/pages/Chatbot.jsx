@@ -5,6 +5,7 @@ import Input from "../elements/Input"
 import { User, Brain, Settings, Send, LogOut, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { initializeChatbot, sendMessageToChatbot, getChatbotResponse } from "../api/api";
+import Header from "../components/Header";
 
 const Chatbot = () => {
   const navigate = useNavigate();
