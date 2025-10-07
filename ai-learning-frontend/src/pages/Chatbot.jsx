@@ -178,124 +178,154 @@ const Chatbot = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-500 to-slate-300">
+    <div className="flex flex-col min-h-screen bg-gray-50 text-gray-900 bg-gradient-to-br from-slate-200 to-slate-400">
       {/* Header */}
-      <div className="backdrop-blur-xl bg-white/10 border-b border-white/20 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500">
-              <MessageCircle className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">AI Mental Age Analysis</h1>
-              <p className="text-gray-300 text-sm">Welcome back, {userData?.name || 'User'}</p>
-            </div>
+      <div className="backdrop-blur-xl bg-black/90 border-b border-gray-700 px-6 py-4">
+  <div className="max-w-7xl mx-auto flex items-center justify-between">
+    {/* Left Section */}
+    <div className="flex items-center gap-4">
+      <div className="p-2 rounded-xl bg-gradient-to-r from-gray-800 to-gray-600">
+        <MessageCircle className="h-6 w-6 text-gray-100" />
+      </div>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-100">AI Mental Age Analysis</h1>
+        <p className="text-gray-400 text-sm">
+          Welcome back, {userData?.name || 'User'}
+        </p>
+      </div>
+    </div>
+
+    {/* Right Section */}
+    <div className="flex items-center gap-4">
+      <Badge variant={chatbotInitialized ? "success" : "warning"}>
+        <div
+          className={`w-2 h-2 ${
+            chatbotInitialized ? 'bg-emerald-400' : 'bg-yellow-400'
+          } rounded-full animate-pulse mr-2`}
+        ></div>
+        {chatbotInitialized ? 'Active Analysis' : 'Connecting...'}
+      </Badge>
+
+      <Button variant="secondary" size="sm" className="bg-gray-800 hover:bg-gray-700 text-gray-200">
+        <Settings className="h-4 w-4" />
+      </Button>
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleLogout}
+        className="border-gray-600 text-gray-200 hover:bg-gray-800"
+      >
+        <LogOut className="h-4 w-4 mr-2" />
+        Logout
+      </Button>
+    </div>
+  </div>
+</div>
+
+
+     {/* Error Banner */}
+{error && (
+  <div className="bg-red-900/30 border-b border-red-600/40 px-6 py-3">
+    <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <p className="text-red-300 font-medium">{error}</p>
+      <Button
+        onClick={retryInitialization}
+        variant="secondary"
+        size="sm"
+        className="bg-gray-800 hover:bg-gray-700 text-gray-200"
+      >
+        Retry
+      </Button>
+    </div>
+  </div>
+)}
+
+{/* Main Chat Container */}
+<div className="max-w-4xl mx-auto h-[calc(100vh-80px)] flex flex-col">
+  {/* Chat Messages */}
+  <div className="flex-1 overflow-y-auto p-6 space-y-6">
+    {messages.map((message) => (
+      <div
+        key={message.id}
+        className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+      >
+        <div className={`flex items-start gap-3 max-w-xs lg:max-w-md ${message.sender === 'user' ? 'flex-row-reverse' : ''}`}>
+          {/* Icon Bubble */}
+          <div
+            className={`p-3 rounded-xl shadow-lg ${
+              message.sender === 'user'
+                ? 'bg-gradient-to-r from-gray-800 to-gray-700'
+                : 'bg-gradient-to-r from-gray-900 to-gray-700'
+            }`}
+          >
+            {message.sender === 'user' ? (
+              <User className="h-5 w-5 text-gray-200" />
+            ) : (
+              <Brain className="h-5 w-5 text-gray-200" />
+            )}
           </div>
-          <div className="flex items-center gap-4">
-            <Badge variant={chatbotInitialized ? "success" : "warning"}>
-              <div className={`w-2 h-2 ${chatbotInitialized ? 'bg-emerald-400' : 'bg-yellow-400'} rounded-full animate-pulse mr-2`}></div>
-              {chatbotInitialized ? 'Active Analysis' : 'Connecting...'}
-            </Badge>
-            <Button variant="secondary" size="sm">
-              <Settings className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
+
+          {/* Message Bubble */}
+          <div
+            className={`px-4 py-3 rounded-2xl backdrop-blur-xl shadow-xl border ${
+              message.sender === 'user'
+                ? 'bg-gray-800/90 text-gray-100 border-gray-700'
+                : 'bg-gray-900/80 text-gray-200 border-gray-700'
+            }`}
+          >
+            <p className="leading-relaxed">{message.text}</p>
+            <p className="text-xs text-gray-400 mt-2">
+              {message.timestamp.toLocaleTimeString()}
+            </p>
           </div>
         </div>
       </div>
+    ))}
 
-      {/* Error Banner */}
-      {error && (
-        <div className="bg-red-500/20 border-b border-red-500/30 px-6 py-3">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <p className="text-red-200">{error}</p>
-            <Button onClick={retryInitialization} variant="secondary" size="sm">
-              Retry
-            </Button>
+    {/* AI Typing Indicator */}
+    {isAnalyzing && (
+      <div className="flex justify-start animate-fade-in">
+        <div className="flex items-start gap-3">
+          <div className="p-3 rounded-xl bg-gradient-to-r from-gray-800 to-gray-700 shadow-lg">
+            <Brain className="h-5 w-5 text-gray-200" />
           </div>
-        </div>
-      )}
-
-      {/* Main Chat Container */}
-      <div className="max-w-4xl mx-auto h-[calc(100vh-80px)] flex flex-col">
-        {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
-            >
-              <div className={`flex items-start gap-3 max-w-xs lg:max-w-md ${message.sender === 'user' ? 'flex-row-reverse' : ''}`}>
-                <div className={`p-3 rounded-xl ${message.sender === 'user'
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500'
-                    : 'bg-gradient-to-r from-emerald-500 to-teal-500'
-                  } shadow-lg`}>
-                  {message.sender === 'user' ? (
-                    <User className="h-5 w-5 text-white" />
-                  ) : (
-                    <Brain className="h-5 w-5 text-white" />
-                  )}
-                </div>
-                <div
-                  className={`px-4 py-3 rounded-2xl backdrop-blur-xl shadow-xl ${message.sender === 'user'
-                      ? 'bg-gradient-to-r from-purple-600/90 to-pink-600/90 text-white border border-purple-400/20'
-                      : 'bg-white/10 text-white border border-white/20'
-                    }`}
-                >
-                  <p className="leading-relaxed">{message.text}</p>
-                  <p className="text-xs opacity-70 mt-2">
-                    {message.timestamp.toLocaleTimeString()}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {isAnalyzing && (
-            <div className="flex justify-start animate-fade-in">
-              <div className="flex items-start gap-3">
-                <div className="p-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 shadow-lg">
-                  <Brain className="h-5 w-5 text-white" />
-                </div>
-                <div className="bg-white/10 backdrop-blur-xl text-white px-4 py-3 rounded-2xl border border-white/20">
-                  <div className="flex items-center gap-3">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-400 border-t-transparent"></div>
-                    <span>AI is analyzing your response...</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Message Input */}
-        <div className="p-6">
-          <div className="backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 p-4">
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <Input
-                  placeholder={chatbotInitialized ? "Type your message here..." : "Connecting to AI tutor..."}
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && !isAnalyzing && handleSendMessage()}
-                  disabled={!chatbotInitialized || isAnalyzing}
-                  className="bg-transparent border-none text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
-                />
-              </div>
-              <Button 
-                onClick={handleSendMessage} 
-                disabled={!newMessage.trim() || !chatbotInitialized || isAnalyzing}
-                className="bg-gradient-to-r from-blue-500 to-blue-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Send className={`h-5 w-5 ${isAnalyzing ? 'animate-pulse' : ''}`} />
-              </Button>
+          <div className="bg-gray-900/80 backdrop-blur-xl text-gray-200 px-4 py-3 rounded-2xl border border-gray-700">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-transparent"></div>
+              <span>AI is analyzing your response...</span>
             </div>
           </div>
         </div>
       </div>
+    )}
+  </div>
+
+  {/* Message Input */}
+  <div className="p-6">
+    <div className="backdrop-blur-xl bg-gray-900/80 rounded-2xl border border-gray-700 p-4">
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <Input
+            placeholder={chatbotInitialized ? "Type your message here..." : "Connecting to AI tutor..."}
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && !isAnalyzing && handleSendMessage()}
+            disabled={!chatbotInitialized || isAnalyzing}
+            className="bg-transparent border-none text-gray-100 placeholder-gray-500 focus:ring-2 focus:ring-gray-600 disabled:opacity-50"
+          />
+        </div>
+        <Button 
+          onClick={handleSendMessage} 
+          disabled={!newMessage.trim() || !chatbotInitialized || isAnalyzing}
+          className="bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Send className={`h-5 w-5 ${isAnalyzing ? 'animate-pulse' : ''}`} />
+        </Button>
+      </div>
+    </div>
+  </div>
+</div>
     </div>
   );
 };
