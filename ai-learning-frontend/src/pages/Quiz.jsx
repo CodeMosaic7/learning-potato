@@ -238,7 +238,7 @@ const Quiz = () => {
   const userAnswer = quizState.answers.find(a => a.questionId === currentQuestion?.id);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black-100 to-slate-900 text-white overflow-hidden">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">

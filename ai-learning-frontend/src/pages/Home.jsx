@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate} from 'react-router-dom'; 
 import { Brain, BookOpen, MessageSquare, Trophy, Users, ArrowRight, Star, PlayCircle, CheckCircle, Zap, Target, Globe } from 'lucide-react';
 import Header from '../components/Header';
 
 const Home = () => {
   const [isVisible, setIsVisible] = useState(false);
-  
+  const navigate=useNavigate();
   // Set isVisible to true on component mount to trigger animations
   useEffect(() => {
     setIsVisible(true);
@@ -39,7 +39,7 @@ const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-800 to-slate-900 text-white overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black-100 to-slate-900 text-white overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>

@@ -178,7 +178,7 @@ const Chatbot = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 text-gray-900 bg-gradient-to-br from-slate-200 to-slate-400">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black-100 to-slate-900 text-white overflow-hidden flex flex-col">
       {/* Header */}
       <div className="backdrop-blur-xl bg-black/90 border-b border-gray-700 px-6 py-4">
   <div className="max-w-7xl mx-auto flex items-center justify-between">

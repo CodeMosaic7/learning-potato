@@ -65,7 +65,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 text-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black-100 to-slate-900 text-white overflow-hidden">
       <Header />
 
       <div className="flex-grow container mx-auto px-6 py-8 space-y-6 max-w-7xl">
@@ -73,7 +73,7 @@ const Dashboard = () => {
         {/* Welcome Section - Black Card */}
         <div className="bg-black rounded-3xl p-8 text-white shadow-xl">
           <div className="flex items-center justify-between flex-wrap gap-6">
-            <div>
+            <div> 
               <h1 className="text-4xl font-bold mb-2">Hi, {userData?.name || 'User'}!</h1>
               <p className="text-gray-400 text-lg">Keep up the amazing work! You're doing great!</p>
             </div>
