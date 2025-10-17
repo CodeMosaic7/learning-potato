@@ -2,7 +2,7 @@
 
 A modern, AI-powered learning management system built with FastAPI and React, designed to provide personalized educational experiences through intelligent content delivery and assessment.
 
-## 🚀 Features
+##  Features
 
 - **AI-Powered Learning**: Intelligent content recommendations and personalized learning paths
 - **User Authentication**: Secure authentication system
@@ -11,7 +11,7 @@ A modern, AI-powered learning management system built with FastAPI and React, de
 - **RESTful API**: Comprehensive REST API built with FastAPI
 - **Database Integration**: Efficient data management with SQLAlchemy
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 ### Backend
 - **FastAPI** - Modern, fast web framework for building APIs
@@ -31,7 +31,7 @@ A modern, AI-powered learning management system built with FastAPI and React, de
 - **PostCSS** - CSS processing
 - **ESLint/Prettier** - Code formatting and linting
 
-## 📋 Prerequisites
+##  Prerequisites
 
 Before running this application, make sure you have:
 
@@ -39,7 +39,7 @@ Before running this application, make sure you have:
 - **Node.js 16+** and npm/yarn installed
 - **Git** for version control
 
-## ⚡ Quick Start
+##  Quick Start
 
 ### 1. Clone the Repository
 
@@ -92,7 +92,7 @@ npm run dev
 
 The frontend will be available at `http://localhost:5173`
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 learning-potato/
@@ -125,7 +125,7 @@ learning-potato/
 └── requirements.txt
 ```
 
-## 🔧 Configuration
+##  Configuration
 
 ### Environment Variables
 
@@ -148,7 +148,7 @@ AI_API_KEY=your-ai-api-key
 ALLOWED_ORIGINS=http://localhost:5173
 ```
 
-## 🚀 API Endpoints
+##  API Endpoints
 
 ### Authentication
 - `POST /auth/register` - User registration
@@ -167,7 +167,7 @@ ALLOWED_ORIGINS=http://localhost:5173
 - `POST /ai/assessment` - AI-powered assessment
 - `GET /ai/progress` - Get learning analytics
 
-## 🧪 Testing
+##  Testing
 
 ### Backend Tests
 ```bash
@@ -200,14 +200,14 @@ npm run build
 # Deploy the dist/ folder to your hosting service
 ```
 
-## 📊 Database Schema
+##  Database Schema
 
 The platform uses SQLAlchemy models for:
 - **Users**: User accounts and profiles
 - **Assessments**: Quizzes and evaluations
 
 
-## 🤖 AI Integration
+##  AI Integration
 
 The platform includes AI-powered features:
 - **Personalized Recommendations**: Content suggestions based on learning patterns
@@ -215,7 +215,7 @@ The platform includes AI-powered features:
 - **Learning Analytics**: Progress insights and performance prediction
 - **Content Generation**: AI-assisted content creation
 
-## 🔒 Security Features
+##  Security Features
 
 - JWT-based authentication
 - Password hashing with bcrypt
@@ -230,12 +230,12 @@ The platform includes AI-powered features:
 - Write tests for new features
 - Update documentation as needed
 
-## 📝 License
+##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 
-## 🔄 Changelog
+##  Changelog
 
 ### Version 1.0.0
 - Initial release with core learning platform features
@@ -244,7 +244,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Course management system
 - Progress tracking and analytics
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - FastAPI community for excellent documentation
 - React and Vite teams for modern development tools
