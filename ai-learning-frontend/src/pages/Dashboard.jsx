@@ -1,19 +1,17 @@
 import { useState, useEffect } from "react";
 import {
-  Clock, Brain, TrendingUp, Sparkles, Trophy, MessageSquare,
-  Upload, BarChart3, Zap, BookOpen, User, Settings, LogOut,
-  ChevronRight, Calendar, Target, Award, Flame, Compass,
-  CheckCircle, Star, Book, Lightbulb, Pencil
+  Brain, TrendingUp, Sparkles, Trophy, MessageSquare,
+  Upload, BarChart3, BookOpen,
+  ChevronRight, Award, Flame,
+  CheckCircle, Star, Lightbulb, Pencil
 } from "lucide-react";
-import Card from "../elements/Card.jsx";
-import Button from "../elements/Button.jsx";
-import Badge from "../elements/Badge.jsx";
 import Header from "../components/Header.jsx";
 
 const Dashboard = () => {
   const [userData, setUserData] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
     fetchDashboardData();
@@ -29,6 +27,8 @@ const Dashboard = () => {
       const data = await response.json();
       setDashboardData(data);
       setUserData(data.user);
+      console.log('Dashboard Data:', data);
+      setUserName(data.username);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -67,14 +67,13 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black-100 to-slate-900 text-white overflow-hidden">
       <Header />
-
-      <div className="flex-grow container mx-auto px-6 py-8 space-y-6 max-w-7xl">
-        
+      <div className="flex-grow container mx-auto px-6 py-8 space-y-6 max-w-7xl">       
         {/* Welcome Section - Black Card */}
-        <div className="bg-black rounded-3xl p-8 text-white shadow-xl">
+        <div className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-3xl p-8 text-white shadow-xl">
           <div className="flex items-center justify-between flex-wrap gap-6">
             <div> 
-              <h1 className="text-4xl font-bold mb-2">Hi, {userData?.name || 'User'}!</h1>
+              
+              <h1 className="text-4xl font-bold mb-2">Hi, {userName || 'User'}!</h1>
               <p className="text-gray-400 text-lg">Keep up the amazing work! You're doing great!</p>
             </div>
             {userData?.mental_age && (
@@ -121,7 +120,7 @@ const Dashboard = () => {
 
         {/* Assessment Progress */}
         {userData?.assessment_progress !== 'completed' && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-2xl p-6 shadow-sm border border-gray-200">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex-1 min-w-[250px]">
                 <h3 className="text-xl font-semibold flex items-center gap-2 text-gray-900 mb-2">
@@ -174,7 +173,7 @@ const Dashboard = () => {
         {/* Quiz Generator & Recent Scores */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Quiz Generator - Black Card */}
-          <div className="bg-black rounded-2xl p-7 shadow-xl text-white">
+          <div className="bg-white text-black rounded-2xl p-7 shadow-xl">
             <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-yellow-400" />
               <span>Generate Quiz</span>
@@ -231,9 +230,9 @@ const Dashboard = () => {
         </div>
 
         {/* Badges & Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
           {/* Badges - White Card */}
-          <div className="bg-white rounded-2xl p-7 shadow-sm border border-gray-200">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-2xl p-7 shadow-sm border border-gray-200">
             <h3 className="text-xl font-semibold mb-5 flex items-center gap-2 text-gray-900">
               <Award className="w-6 h-6 text-yellow-500" />
               <span>Badges Earned</span>
@@ -255,8 +254,8 @@ const Dashboard = () => {
           </div>
 
           {/* Recent Activity - White Card */}
-          <div className="bg-white rounded-2xl p-7 shadow-sm border border-gray-200">
-            <h3 className="text-xl font-semibold mb-5 flex items-center gap-2 text-gray-900">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-2xl p-7 shadow-sm border border-gray-200">
+            <h3 className="text-xl font-semibold mb-5 flex items-center gap-2 text-black">
               <MessageSquare className="w-6 h-6 text-green-500" />
               <span>Recent Activity</span>
             </h3>
