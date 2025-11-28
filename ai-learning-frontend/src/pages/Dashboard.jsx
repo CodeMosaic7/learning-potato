@@ -5,13 +5,16 @@ import {
   ChevronRight, Award, Flame,
   CheckCircle, Star, Lightbulb, Pencil
 } from "lucide-react";
-import Header from "../components/Header.jsx";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 const Dashboard = () => {
   const [userData, setUserData] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
+  const [quizTopic, setQuizTopic] = useState('');
+  const [quizDifficulty, setQuizDifficulty] = useState('Easy');
 
   useEffect(() => {
     fetchDashboardData();
@@ -19,16 +22,60 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch('/api/v1/dashboard', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
-      setDashboardData(data);
-      setUserData(data.user);
-      console.log('Dashboard Data:', data);
-      setUserName(data.username);
+      // Simulated data for demonstration--- has to be replaced with actual API call
+      const mockData = {
+        username: "Alex",
+        user: {
+          mental_age: 12,
+          intellect_level: "Advanced",
+          assessment_progress: "75%"
+        },
+        quiz_stats: {
+          completed_quizzes: 15,
+          average_score: 87,
+          recent_scores: [92, 88, 95, 85, 90]
+        },
+        learning_streak: 7,
+        homework_stats: {
+          completed_homework: 12,
+          pending_homework: 3,
+          submission_rate: 80
+        },
+        badges_earned: ["Quick Learner", "Perfect Score", "Week Warrior", "Math Master"],
+        recent_activities: [
+          {
+            type: "quiz",
+            description: "Completed Science Quiz",
+            timestamp: "2 hours ago",
+            points: 50
+          },
+          {
+            type: "homework",
+            description: "Submitted Math Homework",
+            timestamp: "5 hours ago",
+            points: 30
+          },
+          {
+            type: "badge",
+            description: "Earned 'Week Warrior' Badge",
+            timestamp: "1 day ago",
+            points: 100
+          },
+          {
+            type: "assessment",
+            description: "Completed Assessment Module",
+            timestamp: "2 days ago",
+            points: 75
+          }
+        ]
+      };
+
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setDashboardData(mockData);
+      setUserData(mockData.user);
+      setUserName(mockData.username);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -56,30 +103,44 @@ const Dashboard = () => {
     return icons[type] || <Star className="w-5 h-5 text-gray-500" />;
   };
 
+  const handleGenerateQuiz = () => {
+    if (!quizTopic.trim()) {
+      alert('Please enter a topic for the quiz');
+      return;
+    }
+    console.log(`Generating ${quizDifficulty} quiz on: ${quizTopic}`);
+    alert(`Quiz generated! Topic: ${quizTopic}, Difficulty: ${quizDifficulty}`);
+    setQuizTopic('');
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-gray-900 text-xl font-medium">Loading your learning journey...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="text-white text-xl font-medium">Loading your learning journey...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black-100 to-slate-900 text-white overflow-hidden">
-      <Header />
-      <div className="flex-grow container mx-auto px-6 py-8 space-y-6 max-w-7xl">       
-        {/* Welcome Section - Black Card */}
-        <div className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-3xl p-8 text-white shadow-xl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+      {/* Header */}
+     <Header/>
+
+      <div className="container mx-auto px-6 py-8 space-y-6 max-w-7xl">       
+        {/* Welcome Section */}
+        <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-8 shadow-2xl">
           <div className="flex items-center justify-between flex-wrap gap-6">
             <div> 
-              
-              <h1 className="text-4xl font-bold mb-2">Hi, {userName || 'User'}!</h1>
-              <p className="text-gray-400 text-lg">Keep up the amazing work! You're doing great!</p>
+              <h1 className="text-4xl font-bold mb-2">Hi, {userName}!</h1>
+              <p className="text-purple-100 text-lg">Keep up the amazing work! You're doing great!</p>
             </div>
             {userData?.mental_age && (
-              <div className="text-center bg-gray-900 rounded-2xl p-6 border border-gray-800 min-w-[160px]">
-                <Brain className="w-10 h-10 text-purple-400 mx-auto mb-3" />
-                <p className="text-sm text-gray-400 mb-1">Mental Age</p>
+              <div className="text-center bg-white bg-opacity-20 backdrop-blur-sm rounded-2xl p-6 border border-white border-opacity-30 min-w-[160px]">
+                <Brain className="w-10 h-10 text-white mx-auto mb-3" />
+                <p className="text-sm text-purple-100 mb-1">Mental Age</p>
                 <p className="text-3xl font-bold mb-3">{userData.mental_age}</p>
                 <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getIntellectLevelColor(userData?.intellect_level)}`}>
                   {userData?.intellect_level}
@@ -89,29 +150,29 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Key Stats - White Cards */}
+        {/* Key Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all hover:scale-105">
             <p className="text-gray-500 text-sm font-medium mb-2">Quizzes Completed</p>
             <h2 className="text-3xl font-bold text-gray-900 mb-3">{dashboardData?.quiz_stats.completed_quizzes || 0}</h2>
             <Trophy className="w-6 h-6 text-yellow-500" />
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all hover:scale-105">
             <p className="text-gray-500 text-sm font-medium mb-2">Learning Streak</p>
             <h2 className="text-3xl font-bold text-gray-900 mb-3">{dashboardData?.learning_streak || 0} <span className="text-lg text-gray-500">days</span></h2>
             <Flame className="w-6 h-6 text-orange-500" />
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all hover:scale-105">
             <p className="text-gray-500 text-sm font-medium mb-2">Average Score</p>
             <h2 className="text-3xl font-bold text-gray-900 mb-3">{dashboardData?.quiz_stats.average_score || 0}%</h2>
             <TrendingUp className="w-6 h-6 text-green-500" />
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all hover:scale-105">
             <p className="text-gray-500 text-sm font-medium mb-2">Homework Done</p>
             <h2 className="text-3xl font-bold text-gray-900 mb-3">{dashboardData?.homework_stats.completed_homework || 0}</h2>
             <CheckCircle className="w-6 h-6 text-blue-500" />
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all hover:scale-105">
             <p className="text-gray-500 text-sm font-medium mb-2">Badges Earned</p>
             <h2 className="text-3xl font-bold text-gray-900 mb-3">{dashboardData?.badges_earned?.length || 0}</h2>
             <Award className="w-6 h-6 text-purple-500" />
@@ -120,19 +181,19 @@ const Dashboard = () => {
 
         {/* Assessment Progress */}
         {userData?.assessment_progress !== 'completed' && (
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-2xl p-6 shadow-sm border border-gray-200">
+          <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-6 shadow-lg">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex-1 min-w-[250px]">
-                <h3 className="text-xl font-semibold flex items-center gap-2 text-gray-900 mb-2">
-                  <Brain className="w-6 h-6 text-purple-500" />
+                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2">
+                  <Brain className="w-6 h-6" />
                   <span>Complete Your Assessment</span>
                 </h3>
-                <p className="text-gray-600 mb-2">Discover your learning style and intellectual age!</p>
-                <p className="text-sm text-gray-500">Progress: {userData?.assessment_progress || '0%'}</p>
+                <p className="text-blue-100 mb-2">Discover your learning style and intellectual age!</p>
+                <p className="text-sm text-blue-200">Progress: {userData?.assessment_progress || '0%'}</p>
               </div>
               <button 
-                onClick={() => window.location.href = '/assessment'}
-                className="bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition-colors flex items-center gap-2"
+                onClick={() => alert('Navigating to assessment...')}
+                className="bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2"
               >
                 {userData?.assessment_progress ? 'Continue' : 'Start Now'} 
                 <ChevronRight className="w-4 h-4" />
@@ -143,7 +204,7 @@ const Dashboard = () => {
 
         {/* Homework Section */}
         {dashboardData?.homework_stats.pending_homework > 0 && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+          <div className="bg-white rounded-2xl p-6 shadow-lg">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex-1 min-w-[250px]">
                 <h3 className="text-xl font-semibold flex items-center gap-2 text-gray-900 mb-2">
@@ -160,8 +221,8 @@ const Dashboard = () => {
                 <p className="text-sm text-gray-500">Submission Rate: {dashboardData.homework_stats.submission_rate}%</p>
               </div>
               <button 
-                onClick={() => window.location.href = '/homework'}
-                className="bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition-colors flex items-center gap-2"
+                onClick={() => alert('Navigating to homework...')}
+                className="bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition-colors flex items-center gap-2"
               >
                 View All 
                 <ChevronRight className="w-4 h-4" />
@@ -172,8 +233,8 @@ const Dashboard = () => {
 
         {/* Quiz Generator & Recent Scores */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Quiz Generator - Black Card */}
-          <div className="bg-white text-black rounded-2xl p-7 shadow-xl">
+          {/* Quiz Generator */}
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-2xl p-7 shadow-xl border border-gray-700">
             <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-yellow-400" />
               <span>Generate Quiz</span>
@@ -183,23 +244,32 @@ const Dashboard = () => {
               <input 
                 type="text" 
                 placeholder="Enter a topic (e.g., Math, Science, History)"
-                className="w-full px-4 py-3 bg-gray-900 rounded-xl border border-gray-800 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-white placeholder-gray-500 transition-all"
+                value={quizTopic}
+                onChange={(e) => setQuizTopic(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-800 rounded-xl border border-gray-700 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-500 transition-all"
               />
               <div className="flex gap-3">
-                <select className="px-4 py-3 bg-gray-900 rounded-xl border border-gray-800 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-white transition-all">
+                <select 
+                  value={quizDifficulty}
+                  onChange={(e) => setQuizDifficulty(e.target.value)}
+                  className="px-4 py-3 bg-gray-800 rounded-xl border border-gray-700 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 text-white transition-all"
+                >
                   <option>Easy</option>
                   <option>Medium</option>
                   <option>Hard</option>
                 </select>
-                <button className="flex-1 bg-white text-black px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-colors">
+                <button 
+                  onClick={handleGenerateQuiz}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
+                >
                   Generate Quiz
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Recent Scores - White Card */}
-          <div className="bg-white rounded-2xl p-7 shadow-sm border border-gray-200">
+          {/* Recent Scores */}
+          <div className="bg-white rounded-2xl p-7 shadow-lg">
             <h3 className="text-xl font-semibold mb-5 flex items-center gap-2 text-gray-900">
               <BarChart3 className="w-6 h-6 text-blue-500" />
               <span>Recent Quiz Scores</span>
@@ -230,32 +300,32 @@ const Dashboard = () => {
         </div>
 
         {/* Badges & Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
-          {/* Badges - White Card */}
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-2xl p-7 shadow-sm border border-gray-200">
-            <h3 className="text-xl font-semibold mb-5 flex items-center gap-2 text-gray-900">
-              <Award className="w-6 h-6 text-yellow-500" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Badges */}
+          <div className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl p-7 shadow-xl">
+            <h3 className="text-xl font-semibold mb-5 flex items-center gap-2 text-white">
+              <Award className="w-6 h-6" />
               <span>Badges Earned</span>
             </h3>
             <div className="grid grid-cols-2 gap-3">
               {dashboardData?.badges_earned?.map((badge, idx) => (
-                <div key={idx} className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-5 border border-yellow-200 text-center hover:shadow-md transition-all cursor-pointer">
-                  <Trophy className="w-10 h-10 text-yellow-500 mx-auto mb-2" />
+                <div key={idx} className="bg-white bg-opacity-90 rounded-xl p-5 text-center hover:bg-opacity-100 hover:scale-105 transition-all cursor-pointer">
+                  <Trophy className="w-10 h-10 text-yellow-600 mx-auto mb-2" />
                   <p className="text-sm font-semibold text-gray-900">{badge}</p>
                 </div>
               ))}
               {(!dashboardData?.badges_earned || dashboardData.badges_earned.length === 0) && (
                 <div className="col-span-2 text-center py-8">
-                  <Trophy className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500">Complete challenges to earn badges!</p>
+                  <Trophy className="w-12 h-12 text-white text-opacity-50 mx-auto mb-3" />
+                  <p className="text-white">Complete challenges to earn badges!</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Recent Activity - White Card */}
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-2xl p-7 shadow-sm border border-gray-200">
-            <h3 className="text-xl font-semibold mb-5 flex items-center gap-2 text-black">
+          {/* Recent Activity */}
+          <div className="bg-white rounded-2xl p-7 shadow-lg">
+            <h3 className="text-xl font-semibold mb-5 flex items-center gap-2 text-gray-900">
               <MessageSquare className="w-6 h-6 text-green-500" />
               <span>Recent Activity</span>
             </h3>
@@ -286,24 +356,24 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Homework Help Section - White Card */}
-        <div className="bg-white rounded-2xl p-7 shadow-sm border border-gray-200">
-          <h3 className="text-xl font-semibold mb-2 flex items-center gap-2 text-gray-900">
-            <Lightbulb className="w-6 h-6 text-yellow-500" />
+        {/* Homework Help Section */}
+        <div className="bg-gradient-to-r from-green-600 to-teal-600 rounded-2xl p-7 shadow-xl">
+          <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
+            <Lightbulb className="w-6 h-6" />
             <span>Need Homework Help?</span>
           </h3>
-          <p className="text-gray-600 mb-5">Upload your homework and get instant help!</p>
+          <p className="text-green-100 mb-5">Upload your homework and get instant help!</p>
           <div className="flex flex-wrap gap-3">
             <button 
-              className="flex-1 min-w-[200px] bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
-              onClick={() => window.location.href = '/homework-help'}
+              className="flex-1 min-w-[200px] bg-white text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition-colors flex items-center justify-center gap-2"
+              onClick={() => alert('Upload homework feature coming soon!')}
             >
               <Upload className="w-5 h-5" />
               Upload Homework
             </button>
             <button 
-              className="flex-1 min-w-[200px] bg-white text-gray-900 border-2 border-gray-300 px-6 py-3 rounded-xl font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
-              onClick={() => window.location.href = '/ai-tutor'}
+              className="flex-1 min-w-[200px] bg-green-700 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-800 transition-colors flex items-center justify-center gap-2"
+              onClick={() => alert('AI Tutor chat coming soon!')}
             >
               <MessageSquare className="w-5 h-5" />
               Ask AI Tutor
@@ -313,25 +383,8 @@ const Dashboard = () => {
       </div>
 
       {/* Footer */}
-      <footer className="container mx-auto px-6 py-12 border-t border-gray-200 max-w-7xl">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-3">
-            <Brain className="w-8 h-8 text-purple-500" />
-            <span className="text-xl font-bold text-gray-900">
-              Kids Learning Platform
-            </span>
-          </div>
-          <div className="flex flex-wrap justify-center gap-6 text-gray-600">
-            <a href="#" className="hover:text-purple-500 transition-colors font-medium">Privacy</a>
-            <a href="#" className="hover:text-purple-500 transition-colors font-medium">Terms</a>
-            <a href="#" className="hover:text-purple-500 transition-colors font-medium">Support</a>
-            <a href="#" className="hover:text-purple-500 transition-colors font-medium">Contact</a>
-          </div>
-        </div>
-        <div className="text-center text-gray-500 mt-8 text-sm">
-          © 2025 Kids Learning Platform. All rights reserved.
-        </div>
-      </footer>
+      <Footer/>
+      
     </div>
   );
 };

@@ -52,7 +52,7 @@ export async function logoutUser(){
   }
 }
 
-export async function userdetails(token){
+export async function Userdetails(token){
   try{
     const res= await API.get('/auth/me',{
       headers: {
