@@ -126,3 +126,92 @@ class QuizResult(BaseModel):
     score: int
     total_questions: int
     submitted_at: datetime
+
+
+# format info for dashboard
+# const mockData = {
+#         username: "Alex",
+#         user: {
+#           mental_age: 12,
+#           intellect_level: "Advanced",
+#           assessment_progress: "75%"
+#         },
+#         quiz_stats: {
+#           completed_quizzes: 15,
+#           average_score: 87,
+#           recent_scores: [92, 88, 95, 85, 90]
+#         },
+#         learning_streak: 7,
+#         homework_stats: {
+#           completed_homework: 12,
+#           pending_homework: 3,
+#           submission_rate: 80
+#         },
+#         badges_earned: ["Quick Learner", "Perfect Score", "Week Warrior", "Math Master"],
+#         recent_activities: [
+#           {
+#             type: "quiz",
+#             description: "Completed Science Quiz",
+#             timestamp: "2 hours ago",
+#             points: 50
+#           },
+#           {
+#             type: "homework",
+#             description: "Submitted Math Homework",
+#             timestamp: "5 hours ago",
+#             points: 30
+#           },
+#           {
+#             type: "badge",
+#             description: "Earned 'Week Warrior' Badge",
+#             timestamp: "1 day ago",
+#             points: 100
+#           },
+#           {
+#             type: "assessment",
+#             description: "Completed Assessment Module",
+#             timestamp: "2 days ago",
+#             points: 75
+#           }
+#         ]
+#       };
+
+class RecentActivity(BaseModel):
+    type: str
+    description: str
+    timestamp: str
+    points: int
+
+
+class QuizStats(BaseModel):
+    completed_quizzes: int
+    average_score: float
+    recent_scores: List[int]
+
+
+class HomeworkStats(BaseModel):
+    completed_homework: int
+    pending_homework: int
+    submission_rate: float
+
+
+class UserDashboardData(BaseModel):
+    mental_age: Optional[int] = None
+    intellect_level: Optional[str] = None
+    assessment_progress: Optional[str] = None
+
+
+
+class DashboardInfo(BaseModel):
+    username: str
+    user: UserDashboardData
+    quiz_stats: QuizStats
+    learning_streak: int
+    homework_stats: HomeworkStats
+    badges_earned: List[str]
+    recent_activities: List[RecentActivity]
+
+    class Config:
+        from_attributes = True
+
+

@@ -1,6 +1,6 @@
 from app.db import Session
 from app.models import User
-import datetime
+from datetime import datetime, timezone
 from typing import Optional
 import json
 class UserDatabase:
@@ -46,19 +46,20 @@ class UserDatabase:
             state_data = VALUES(state_data),
             updated_at = VALUES(updated_at)
             """
-            self.db_session.execute(query, (user_id, json.dumps(state_data), datetime.now()))
-            self.db_session.commit()
+            # updated db_session to db
+            self.db.execute(query, (user_id, json.dumps(state_data), datetime.now(timezone.utc)))
+            self.db.commit()
             
         except Exception as e:
             print(f"Error saving conversation state: {e}")
-            self.db_session.rollback()
+            self.db.rollback()
 
     def get_conversation_state(self, user_id: int) -> dict:
         """Get conversation state from database"""
         try:
             # From conversation_states table
-            query = "SELECT state_data FROM conversation_states WHERE user_id = %s"
-            result = self.db_session.execute(query, (user_id,)).fetchone()
+            query = "SELECT conversation_state FROM User WHERE user_id = %s"
+            result = self.db.execute(query, (user_id,)).fetchone()
             # query = "SELECT conversation_state FROM users WHERE id = %s"
             # result = self.db_session.execute(query, (user_id,)).fetchone()
             if result and result[0]:
@@ -74,8 +75,8 @@ class UserDatabase:
         try:
             # Delete from conversation_states table
             query = "DELETE FROM conversation_states WHERE user_id = %s"
-            self.db_session.execute(query, (user_id,))
-            self.db_session.commit()   
+            self.db.execute(query, (user_id,))
+            self.db.commit()   
             # Update users table
             # query = "UPDATE users SET conversation_state = NULL WHERE id = %s"
             # self.db_session.execute(query, (user_id,))
@@ -83,5 +84,5 @@ class UserDatabase:
             
         except Exception as e:
             print(f"Error clearing conversation state: {e}")
-            self.db_session.rollback()
+            self.db.rollback()
 
