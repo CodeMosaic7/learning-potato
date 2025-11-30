@@ -19,14 +19,6 @@ const uploadHomeworkImage = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
   try {
-    // Simulating API call - replace with your actual axios call
-    // const res = await axios.post('http://127.0.0.1:8000/homework/upload', formData, {
-    //   headers: {
-    //     'Content-Type': 'multipart/form-data'
-    //   }
-    // });
-    
-    // Mock response for demo
     await new Promise(resolve => setTimeout(resolve, 2000));
     return {
       success: true,
@@ -49,7 +41,7 @@ const HomeWorkHelper = () => {
     {
       id: 1,
       sender: 'bot',
-      text: "Hi there! I'm your AI homework helper. Upload a photo of your homework, textbook, or worksheet, and I'll help you understand and complete it step by step! 📚✨",
+      text: "Hi there! I'm your Homework helper. Upload a photo of your homework, textbook, or worksheet, and I'll help you understand and complete it step by step! 📚✨",
       timestamp: new Date()
     }
   ]);

@@ -62,7 +62,7 @@ class MentalAgeAssessmentChatbot:
             raise ValueError("GEMINI_API_KEY not found in environment variables.")
         
         return ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash-exp",
+            model="gemini-2-flash-exp",
             google_api_key=api_key,
             temperature=0.6,
             max_tokens=400,
@@ -703,3 +703,5 @@ def get_learning_insights(user_id: int) -> Dict[str, Any]:
             
     except Exception as e:
         return {"error": str(e)}
+
+# Upgrade the code and chatbot to agentic chatbot with tools and memory in next iteration
