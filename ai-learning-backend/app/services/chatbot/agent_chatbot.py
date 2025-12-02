@@ -1,263 +1,503 @@
 from langgraph.graph import StateGraph, END
 from typing import TypedDict, Literal
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 import os
 import dotenv
+import time
+import openai
 
 dotenv.load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
+# wrapper to limit llm calls
+MAX_REQUESTS_PER_MIN = 20 
+DELAY = 60 / MAX_REQUESTS_PER_MIN
 
-# State definition
-class State(TypedDict): #to be customized based on the workflow
+def llm_rate_limiter(func):
+    def wrapper(*args, **kwargs):
+        time.sleep(DELAY)  # delay each call
+        for attempt in range(5):
+            try:
+                return func(*args, **kwargs)
+            except openai.RateLimitError:
+                wait = 2 ** attempt
+                print(f"Rate limit reached. Retrying in {wait}s ...")
+                time.sleep(wait)
+        raise Exception("Failed after multiple retries.")
+    return wrapper
+
+@llm_rate_limiter
+def safe_invoke(prompt):
+    return llm.invoke(prompt)
+# State
+class State(TypedDict):
+    username:str
     user_input: str
     conversation_history: list
-    user_category: str 
+    evaluation_complete: bool 
+    
+    # Age assessment fields
+    estimated_age: int  
+    age_category: str  
+    age_confidence: int 
+    age_indicators: list  
+    
+    # Mental state fields
     assessment_score: int  
-    evaluation_result: str
-    counsellor_response: str
+    primary_concern: str  
+    emotional_state: str
+    risk_level: str  
+    
+    # Response fields
+    current_response: str
+    needs_more_info: bool
     final_guidance: str
 
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash-exp",
-    google_api_key=api_key,
-    temperature=0.6,
-    max_tokens=400,
-    convert_system_message_to_human=True
-)
+# llm = ChatGoogleGenerativeAI(
+#     model="gemini-2.0-flash-exp",
+#     google_api_key=api_key,
+#     temperature=0.6,
+#     max_tokens=500,
+#     limit_response_tokens=True,
+#     convert_system_message_to_human=True
+# )
 
-# nodes
+
+llm = ChatOpenAI(
+    model="gpt-3.5-turbo",
+    api_key=os.getenv("OPENAI_API_KEY"),
+    temperature=0.6,
+    max_tokens=400
+)
+# === NODES ===
+
 def welcome_node(state: State) -> State:
-    """Welcome the user and initialize conversation"""
-    welcome_msg = "Hello! I'm here to support you. How are you feeling today?"
+    """Welcome the user and start conversation"""
+    welcome_msg = "Hello! I'm here to support you. How are you feeling today? Feel free to share what's on your mind."
+    
     state["conversation_history"] = [{"role": "assistant", "content": welcome_msg}]
+    state["needs_more_info"] = True
+    state["age_indicators"] = []
+    
     print(f"\n🤖 Assistant: {welcome_msg}")
     return state
 
-def evaluator_node(state: State) -> State:
-    """Evaluate user's request and categorize their needs"""
+def age_evaluator_node(state: State) -> State:
+    """Continuously evaluate age based on conversation patterns"""
+    if state.get("evaluation_complete", False):
+        return state
     user_input = state.get("user_input", "")
+    history = state.get("conversation_history", [])
     
-    prompt = f"""Analyze this user message and provide:
-1. Category (child/teen/adult) based on language complexity
-2. Urgency level (1-10)
-3. Main concern (anxiety/depression/stress/general)
+    recent_messages = "\n".join([
+        f"{msg['role']}: {msg['content']}" 
+        for msg in history[-6:]  # to maintain context, use last 6 messages
+    ])
+    
+    prompt = f"""You have to analyze this conversation to determine the user's age and intellectual/emotional maturity, being the child psycologist.
 
-User message: {user_input}
+Recent conversation:
+{recent_messages}
 
-Respond in format:
-Category: [child/teen/adult]
-Urgency: [1-10]
-Concern: [type]"""
+Current message: {user_input}
 
-    response = llm.invoke(prompt)
+Provide a detailed assessment:
+1. Estimated Age: [specific number like 8, 14, 25, etc.]
+2. Age Category: [child (5-12), teen (13-17), young_adult (18-24), adult (25+)]
+3. Confidence Level: [1-10, where 10 is very confident]
+4. Key Indicators: [List 3-4 specific language/content clues]
+5. Language Complexity: [simple/moderate/advanced]
+6. Emotional Maturity: [developing/adolescent/mature]
+7. Topics of Concern: [what they're worried about]
+
+Base your assessment on:
+- Vocabulary and sentence structure
+- Topics they discuss
+- How they express emotions
+- Cultural references
+- Concerns and priorities
+- Communication style
+
+Format your response exactly as shown above."""
+
+    response = safe_invoke(prompt)
     evaluation = response.content
     
-    # Parse evaluation
+    # Parse the evaluation
     lines = evaluation.split('\n')
-    for line in lines:
-        if 'Category:' in line:
-            state["user_category"] = line.split(':')[1].strip().lower()
-        elif 'Urgency:' in line:
-            try:
-                state["assessment_score"] = int(line.split(':')[1].strip())
-            except:
-                state["assessment_score"] = 5
+    indicators = []
     
-    state["evaluation_result"] = evaluation
-    print(f"\nEvaluation: {evaluation}")
+    for line in lines:
+        line = line.strip()
+        if 'Estimated Age:' in line:
+            try:
+                age_str = line.split(':')[1].strip()
+                # Extract just the number
+                age_num = ''.join(filter(str.isdigit, age_str.split()[0]))
+                state["estimated_age"] = int(age_num) if age_num else 15
+            except:
+                state["estimated_age"] = 15
+                
+        elif 'Age Category:' in line:
+            category = line.split(':')[1].strip().lower()
+            # Extract just the category word
+            if 'child' in category:
+                state["age_category"] = "child"
+            elif 'teen' in category:
+                state["age_category"] = "teen"
+            elif 'young_adult' in category:
+                state["age_category"] = "young_adult"
+            else:
+                state["age_category"] = "adult"
+                
+        elif 'Confidence Level:' in line:
+            try:
+                conf_str = line.split(':')[1].strip()
+                state["age_confidence"] = int(''.join(filter(str.isdigit, conf_str.split()[0])))
+            except:
+                state["age_confidence"] = 5
+                
+        elif 'Key Indicators:' in line or line.startswith('-') or line.startswith('•'):
+            if line.startswith('-') or line.startswith('•'):
+                indicators.append(line[1:].strip())
+    
+    state["age_indicators"] = indicators
+    
+    print(f"\n🔍 Age Assessment:")
+    print(f"   Estimated Age: {state.get('estimated_age', 'Unknown')}")
+    print(f"   Category: {state.get('age_category', 'Unknown')}")
+    print(f"   Confidence: {state.get('age_confidence', 0)}/10")
+    
     return state
 
-def assessment_node(state: State) -> State:
-    """Assess mental/emotional state and determine approach"""
+def mental_state_assessor_node(state: State) -> State:
+    """Assess mental and emotional state"""
     user_input = state.get("user_input", "")
-    category = state.get("user_category", "adult")
+    age_category = state.get("age_category", "adult")
+    estimated_age = state.get("estimated_age", 15)
     
-    prompt = f"""As a mental health assessment specialist, analyze this {category}'s message:
+    prompt = f"""As a mental health professional, assess this message from a {age_category} (approximately {estimated_age} years old):
+
 "{user_input}"
 
-Provide:
-1. Emotional state assessment
-2. Key concerns identified
-3. Recommended approach
-4. Risk factors (if any)
+Provide assessment in this format:
+1. Urgency Score: [1-10]
+2. Primary Concern: [anxiety/depression/stress/trauma/relationships/academic/family/general]
+3. Emotional State: [brief description]
+4. Risk Level: [low/medium/high]
+5. Needs Immediate Help: [yes/no]
 
-Keep response concise and professional."""
+Consider age-appropriate concerns and expression styles."""
 
-    response = llm.invoke(prompt)
+    response = safe_invoke(prompt)
     assessment = response.content
     
-    state["conversation_history"].append({
-        "role": "system",
-        "content": f"Assessment: {assessment}"
-    })
+    # Parse assessment
+    lines = assessment.split('\n')
+    for line in lines:
+        line = line.strip()
+        if 'Urgency Score:' in line:
+            try:
+                score_str = line.split(':')[1].strip()
+                state["assessment_score"] = int(''.join(filter(str.isdigit, score_str.split()[0])))
+            except:
+                state["assessment_score"] = 5
+                
+        elif 'Primary Concern:' in line:
+            state["primary_concern"] = line.split(':')[1].strip()
+            
+        elif 'Emotional State:' in line:
+            state["emotional_state"] = line.split(':')[1].strip()
+            
+        elif 'Risk Level:' in line:
+            state["risk_level"] = line.split(':')[1].strip().lower()
     
-    print(f"\n🔍 Assessment: {assessment}")
+    print(f"   Urgency: {state.get('assessment_score', 0)}/10")
+    print(f"   Concern: {state.get('primary_concern', 'Unknown')}")
+    print(f"   Risk: {state.get('risk_level', 'Unknown')}")
+    
     return state
 
-def counsellor_agent_node(state: State) -> State:
-    """Generate personalized counseling response"""
-    user_input = state.get("user_input", "")
-    category = state.get("user_category", "adult")
+def conversation_router_node(state: State) -> State:
+    """Decide if we need more info or can provide guidance"""
+    age_confidence = state.get("age_confidence", 0)
     assessment_score = state.get("assessment_score", 5)
     
-    # Adjust tone based on category
-    tone_guide = {
-        "child": "simple, warm, and encouraging language suitable for children", #needs to age in number
-        "teen": "relatable, supportive language that respects their independence",
-        "adult": "professional yet empathetic counseling approach"
-    }
+    # Need at least 2-3 interactions unless it's an emergency
+    if assessment_score < 8:
+        state["needs_more_info"] = True
+        state["evaluation_complete"] = False
+    elif age_confidence >= 7:
+        state["needs_more_info"] = False
+        state["evaluation_complete"] = True
+    elif assessment_score >= 8: 
+        state["needs_more_info"] = False
+        state["evaluation_complete"] = True
+    else:
+        state["needs_more_info"] = True
+        state["evaluation_complete"] = False
     
-    prompt = f"""You are a compassionate counselor speaking to a {category}.
-Use {tone_guide.get(category, tone_guide['adult'])}.
+    return state
 
-User's message: "{user_input}"
-Urgency level: {assessment_score}/10
-
-Provide:
-1. Empathetic acknowledgment
-2. Validation of feelings
-3. Practical coping strategies
-4. Encouragement
-
-Keep response warm and actionable."""
-
-    response = llm.invoke(prompt)
-    counsellor_response = response.content
+def follow_up_node(state: State) -> State:
+    """Ask follow-up questions to better understand the user"""
+    age_category = state.get("age_category", "adult")
+    estimated_age = state.get("estimated_age", 15)
+    primary_concern = state.get("primary_concern", "general")
     
-    state["counsellor_response"] = counsellor_response
+    prompt = f"""You're talking to a {age_category} (around {estimated_age} years old) about {primary_concern}.
+
+Generate a warm, empathetic follow-up response that:
+1. Acknowledges their feelings briefly
+2. Asks ONE thoughtful question to understand them better
+3. Uses age-appropriate language
+
+Keep it conversational and supportive. Make them feel heard."""
+
+    response = safe_invoke(prompt)
+    follow_up = response.content
+    
+    state["current_response"] = follow_up
     state["conversation_history"].append({
         "role": "assistant",
-        "content": counsellor_response
+        "content": follow_up
     })
     
-    print(f"\n💬 Counselor: {counsellor_response}")
+    print(f"\n💬 Assistant: {follow_up}")
     return state
 
 def guidance_node(state: State) -> State:
-    """Provide final guidance and resources"""
-    category = state.get("user_category", "adult")
+    """Provide comprehensive, age-appropriate guidance"""
+    age_category = state.get("age_category", "adult")
+    estimated_age = state.get("estimated_age", 15)
     assessment_score = state.get("assessment_score", 5)
+    primary_concern = state.get("primary_concern", "general")
+    emotional_state = state.get("emotional_state", "")
+    risk_level = state.get("risk_level", "low")
     
-    prompt = f"""Provide final guidance for a {category} with urgency level {assessment_score}/10.
+    # Get conversation summary
+    recent_messages = state.get("conversation_history", [])[-6:]
+    
+    tone_guide = {
+        "child": "simple, warm words and short sentences. Use examples they can relate to.",
+        "teen": "respectful, relatable language. Acknowledge their independence and feelings.",
+        "young_adult": "supportive but mature. Respect their adult perspective.",
+        "adult": "professional, empathetic counseling approach."
+    }
+    
+    prompt = f"""Provide final guidance for a {age_category} (age ~{estimated_age}) dealing with {primary_concern}.
+
+Context:
+- Urgency: {assessment_score}/10
+- Emotional state: {emotional_state}
+- Risk level: {risk_level}
+
+Use {tone_guide.get(age_category, tone_guide['adult'])}
 
 Include:
-1. Summary of key takeaways
-2. 2-3 actionable next steps
-3. Relevant resources or hotlines (if urgency > 7)
-4. Positive closing message
+1. Validation and empathy (2-3 sentences)
+2. 3-4 specific, actionable coping strategies appropriate for their age
+3. When to seek additional help
+4. Age-appropriate resources or hotlines (if urgency > 6)
+5. Encouraging closing message
 
-Keep it brief and encouraging."""
+Make it warm, practical, and hopeful."""
 
-    response = llm.invoke(prompt)
-    final_guidance = response.content
+    response = safe_invoke(prompt)
+    guidance = response.content
     
-    state["final_guidance"] = final_guidance
+    state["final_guidance"] = guidance
+    state["current_response"] = guidance
     state["conversation_history"].append({
         "role": "assistant",
-        "content": final_guidance
+        "content": guidance
     })
     
-    print(f"\n✨ Final Guidance: {final_guidance}")
+    print(f"\n✨ Final Guidance:\n{guidance}")
     return state
 
-# Conditional edge function
-def should_escalate(state: State) -> Literal["counsellor_agent", "guidance"]:
-    """Determine if counseling is needed or can proceed to guidance"""
-    score = state.get("assessment_score", 5)
-    # If urgency is high (>6), provide counseling
-    if score > 6:
-        return "counsellor_agent"
+# === CONDITIONAL EDGES ===
+
+def route_after_assessment(state: State) -> Literal["follow_up", "guidance"]:
+    """Route based on whether we need more information"""
+    needs_more = state.get("needs_more_info", True)
+    
+    if needs_more:
+        return "follow_up"
     else:
         return "guidance"
 
+# === BUILD WORKFLOW ===
+
 workflow = StateGraph(State)
 
-# Add nodes
+# Add all nodes
 workflow.add_node("welcome", welcome_node)
-workflow.add_node("evaluator", evaluator_node)
-workflow.add_node("assessment", assessment_node)
-workflow.add_node("counsellor_agent", counsellor_agent_node)
+workflow.add_node("age_evaluator", age_evaluator_node)
+workflow.add_node("mental_state_assessor", mental_state_assessor_node)
+workflow.add_node("conversation_router", conversation_router_node)
+workflow.add_node("follow_up", follow_up_node)
 workflow.add_node("guidance", guidance_node)
 
-# edges
+# Define flow
 workflow.set_entry_point("welcome")
-workflow.add_edge("welcome", "evaluator")
-workflow.add_edge("evaluator", "assessment")
+workflow.add_edge("welcome", "age_evaluator")
+workflow.add_edge("age_evaluator", "mental_state_assessor")
+workflow.add_edge("mental_state_assessor", "conversation_router")
 
-# Conditional edge based on assessment
+# Conditional routing
 workflow.add_conditional_edges(
-    "assessment",
-    should_escalate,
+    "conversation_router",
+    route_after_assessment,
     {
-        "counsellor_agent": "counsellor_agent",
+        "follow_up": "follow_up",
         "guidance": "guidance"
     }
 )
 
-workflow.add_edge("counsellor_agent", "guidance")
+workflow.add_edge("follow_up", END)
 workflow.add_edge("guidance", END)
 
 app = workflow.compile()
 
-# test
-def test_workflow():
-    """Test the workflow with various scenarios"""
+# === INTERACTIVE SESSION ===
+
+def run_interactive_session():
+    """Run an interactive counseling session"""
+    print("\n" + "="*80)
+    print("🏥 Mental Health Counseling Chatbot - Interactive Mode")
+    print("="*80)
+    print("Type 'quit' to exit\n")
     
+    # Initialize state
+    state = {
+        "user_input": "",
+        "conversation_history": [],
+        "evaluation_complete": False,
+        "estimated_age": 0,
+        "age_category": "",
+        "age_confidence": 0,
+        "age_indicators": [],
+        "assessment_score": 0,
+        "primary_concern": "",
+        "emotional_state": "",
+        "risk_level": "",
+        "current_response": "",
+        "needs_more_info": True,
+        "final_guidance": ""
+    }
+    
+    # Start with welcome
+    state = app.invoke(state)
+    
+    while True:
+        # Get user input
+        user_input = input("\n👤 You: ").strip()
+        
+        if user_input.lower() in ['quit', 'exit', 'bye']:
+            print("\n💙 Take care! Remember, you're not alone.")
+            break
+        
+        if not user_input:
+            continue
+        
+        # Update state with user input
+        state["user_input"] = user_input
+        state["conversation_history"].append({
+            "role": "user",
+            "content": user_input
+        })
+        
+        # Process through workflow
+        state = app.invoke(state)
+        
+        # Check if evaluation is complete
+        if state.get("evaluation_complete"):
+            print("\n" + "-"*80)
+            print("📊 EVALUATION SUMMARY:")
+            print(f"   Age: ~{state.get('estimated_age', 'Unknown')} years ({state.get('age_category', 'Unknown')})")
+            print(f"   Primary Concern: {state.get('primary_concern', 'Unknown')}")
+            print(f"   Assessment: {state.get('assessment_score', 0)}/10 urgency")
+            print("-"*80)
+            break
+
+# === TESTING ===
+
+def test_workflow():
+    """Test with automated scenarios"""
     test_cases = [
         {
-            "name": "High Anxiety Case",
-            "input": "I've been feeling really anxious lately. I can't sleep and my heart races all the time. I'm worried something is seriously wrong with me."
+            "name": "Child Case (Age 8-10)",
+            "messages": [
+                "I'm scared to go to school because the other kids are mean to me",
+                "They call me names and don't let me play with them at recess"
+            ]
         },
         {
-            "name": "Teen Stress Case",
-            "input": "School is so stressful rn and my parents don't understand. I feel like I'm drowning in homework and nobody cares."
+            "name": "Teen Case (Age 14-16)",
+            "messages": [
+                "everything is so stressful rn, school is hard and my parents keep fighting",
+                "i feel like nobody gets me and i just want to be alone all the time"
+            ]
         },
         {
-            "name": "Mild Concern Case",
-            "input": "I'm feeling a bit down today. Just wanted to talk to someone."
+            "name": "Adult Case (Age 25+)",
+            "messages": [
+                "I've been experiencing persistent anxiety about my career and relationships",
+                "The stress is affecting my sleep and I'm having difficulty concentrating at work"
+            ]
         }
     ]
     
-    for i, test_case in enumerate(test_cases, 1):
+    for test_case in test_cases:
         print("\n" + "="*80)
-        print(f"TEST CASE {i}: {test_case['name']}")
+        print(f"TEST: {test_case['name']}")
         print("="*80)
         
-        initial_state = {
-            "user_input": test_case["input"],
+        state = {
+            "user_input": "",
             "conversation_history": [],
-            "user_category": "",
+            "evaluation_complete": False,
+            "estimated_age": 0,
+            "age_category": "",
+            "age_confidence": 0,
+            "age_indicators": [],
             "assessment_score": 0,
-            "evaluation_result": "",
-            "counsellor_response": "",
+            "primary_concern": "",
+            "emotional_state": "",
+            "risk_level": "",
+            "current_response": "",
+            "needs_more_info": True,
             "final_guidance": ""
         }
         
-        try:
-            # Run the workflow
-            final_state = app.invoke(initial_state)
-            
-            print("\n" + "-"*80)
-            print("WORKFLOW SUMMARY:")
-            print(f"User Category: {final_state.get('user_category', 'N/A')}")
-            print(f"Assessment Score: {final_state.get('assessment_score', 'N/A')}/10")
-            print(f"Total Messages: {len(final_state.get('conversation_history', []))}")
-            print("-"*80)
-            
-        except Exception as e:
-            print(f"\n❌ Error in test case: {str(e)}")
+        # Welcome
+        state = app.invoke(state)
         
-        print("\n")
+        # Simulate
+        # Simulate conversation
+        for msg in test_case["messages"]:
+            state["user_input"] = msg
+            state["conversation_history"].append({"role": "user", "content": msg})
+            print(f"\n👤 User: {msg}")
+            state = app.invoke(state)
+            
+            if state.get("evaluation_complete"):
+                break
+        
+        print("\n" + "="*80 + "\n")
 
 if __name__ == "__main__":
-    print("🏥 Mental Health Counseling Workflow - LangGraph")
-    print("="*80)
-    
-    # Check if API key is available
     if not api_key:
-        print("⚠️  WARNING: GOOGLE_API_KEY not found in environment variables")
+        print("⚠️  ERROR: GEMINI_API_KEY not found!")
         print("Please set your API key in .env file")
     else:
-        print("✅ API Key loaded successfully")
-        print("\nStarting test workflow...\n")
-        test_workflow()
+        print("✅ API Key loaded\n")
+        
+        mode = input("Choose mode:\n1. Interactive Session\n2. Run Tests\n\nEnter 1 or 2: ").strip()
+        
+        if mode == "1":
+            run_interactive_session()
+        else:
+            test_workflow()
+    
