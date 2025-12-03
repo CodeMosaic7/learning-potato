@@ -1,34 +1,23 @@
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph, END,START
 from typing import TypedDict, Literal
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 import os
 import dotenv
-import time
-import openai
+from typing_extensions import Literal
+from langchain.messages import AIMeasage, HumanMessage, SystemMessage
+from app.services.chatbot.rate_limiter import llm_rate_limiter
 
 dotenv.load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
+
+# Routing Logic to be used here.
+
 # wrapper to limit llm calls
-MAX_REQUESTS_PER_MIN = 20 
-DELAY = 60 / MAX_REQUESTS_PER_MIN
-
-def llm_rate_limiter(func):
-    def wrapper(*args, **kwargs):
-        time.sleep(DELAY)  # delay each call
-        for attempt in range(5):
-            try:
-                return func(*args, **kwargs)
-            except openai.RateLimitError:
-                wait = 2 ** attempt
-                print(f"Rate limit reached. Retrying in {wait}s ...")
-                time.sleep(wait)
-        raise Exception("Failed after multiple retries.")
-    return wrapper
-
 @llm_rate_limiter
 def safe_invoke(prompt):
     return llm.invoke(prompt)
+
 # State
 class State(TypedDict):
     username:str
@@ -82,94 +71,7 @@ def welcome_node(state: State) -> State:
     print(f"\n🤖 Assistant: {welcome_msg}")
     return state
 
-def age_evaluator_node(state: State) -> State:
-    """Continuously evaluate age based on conversation patterns"""
-    if state.get("evaluation_complete", False):
-        return state
-    user_input = state.get("user_input", "")
-    history = state.get("conversation_history", [])
-    
-    recent_messages = "\n".join([
-        f"{msg['role']}: {msg['content']}" 
-        for msg in history[-6:]  # to maintain context, use last 6 messages
-    ])
-    
-    prompt = f"""You have to analyze this conversation to determine the user's age and intellectual/emotional maturity, being the child psycologist.
-
-Recent conversation:
-{recent_messages}
-
-Current message: {user_input}
-
-Provide a detailed assessment:
-1. Estimated Age: [specific number like 8, 14, 25, etc.]
-2. Age Category: [child (5-12), teen (13-17), young_adult (18-24), adult (25+)]
-3. Confidence Level: [1-10, where 10 is very confident]
-4. Key Indicators: [List 3-4 specific language/content clues]
-5. Language Complexity: [simple/moderate/advanced]
-6. Emotional Maturity: [developing/adolescent/mature]
-7. Topics of Concern: [what they're worried about]
-
-Base your assessment on:
-- Vocabulary and sentence structure
-- Topics they discuss
-- How they express emotions
-- Cultural references
-- Concerns and priorities
-- Communication style
-
-Format your response exactly as shown above."""
-
-    response = safe_invoke(prompt)
-    evaluation = response.content
-    
-    # Parse the evaluation
-    lines = evaluation.split('\n')
-    indicators = []
-    
-    for line in lines:
-        line = line.strip()
-        if 'Estimated Age:' in line:
-            try:
-                age_str = line.split(':')[1].strip()
-                # Extract just the number
-                age_num = ''.join(filter(str.isdigit, age_str.split()[0]))
-                state["estimated_age"] = int(age_num) if age_num else 15
-            except:
-                state["estimated_age"] = 15
-                
-        elif 'Age Category:' in line:
-            category = line.split(':')[1].strip().lower()
-            # Extract just the category word
-            if 'child' in category:
-                state["age_category"] = "child"
-            elif 'teen' in category:
-                state["age_category"] = "teen"
-            elif 'young_adult' in category:
-                state["age_category"] = "young_adult"
-            else:
-                state["age_category"] = "adult"
-                
-        elif 'Confidence Level:' in line:
-            try:
-                conf_str = line.split(':')[1].strip()
-                state["age_confidence"] = int(''.join(filter(str.isdigit, conf_str.split()[0])))
-            except:
-                state["age_confidence"] = 5
-                
-        elif 'Key Indicators:' in line or line.startswith('-') or line.startswith('•'):
-            if line.startswith('-') or line.startswith('•'):
-                indicators.append(line[1:].strip())
-    
-    state["age_indicators"] = indicators
-    
-    print(f"\n🔍 Age Assessment:")
-    print(f"   Estimated Age: {state.get('estimated_age', 'Unknown')}")
-    print(f"   Category: {state.get('age_category', 'Unknown')}")
-    print(f"   Confidence: {state.get('age_confidence', 0)}/10")
-    
-    return state
-
+# need to refine: use rag to pull in relevant knowledge
 def mental_state_assessor_node(state: State) -> State:
     """Assess mental and emotional state"""
     user_input = state.get("user_input", "")
@@ -316,7 +218,13 @@ Make it warm, practical, and hopeful."""
     print(f"\n✨ Final Guidance:\n{guidance}")
     return state
 
-# === CONDITIONAL EDGES ===
+
+def route_decision(state: State):
+    """Route based on the intent detected using LLM"""
+    if state["decision"] == "story":
+        return "llm_call_1"
+    elif state["decision"] == "joke":
+        return "llm_call_2"
 
 def route_after_assessment(state: State) -> Literal["follow_up", "guidance"]:
     """Route based on whether we need more information"""
@@ -327,22 +235,22 @@ def route_after_assessment(state: State) -> Literal["follow_up", "guidance"]:
     else:
         return "guidance"
 
-# === BUILD WORKFLOW ===
+# === WORKFLOW ===
 
 workflow = StateGraph(State)
 
 # Add all nodes
 workflow.add_node("welcome", welcome_node)
-workflow.add_node("age_evaluator", age_evaluator_node)
+workflow.add_node("age_evaluator",evaluator_node)
 workflow.add_node("mental_state_assessor", mental_state_assessor_node)
 workflow.add_node("conversation_router", conversation_router_node)
 workflow.add_node("follow_up", follow_up_node)
 workflow.add_node("guidance", guidance_node)
 
 # Define flow
-workflow.set_entry_point("welcome")
-workflow.add_edge("welcome", "age_evaluator")
-workflow.add_edge("age_evaluator", "mental_state_assessor")
+workflow.set_entry_point(START,"welcome")
+workflow.add_edge("welcome", "evaluator") #router node
+workflow.add_edge("evaluator", "mental_state_assessor")
 workflow.add_edge("mental_state_assessor", "conversation_router")
 
 # Conditional routing
@@ -489,7 +397,7 @@ def test_workflow():
 
 if __name__ == "__main__":
     if not api_key:
-        print("⚠️  ERROR: GEMINI_API_KEY not found!")
+        print("⚠️  ERROR: API KEY not found!")
         print("Please set your API key in .env file")
     else:
         print("✅ API Key loaded\n")
