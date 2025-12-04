@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {useNavigate} from 'react-router-dom'; 
-import { Brain, BookOpen, MessageSquare, Trophy, Users, ArrowRight, Star, PlayCircle, CheckCircle, Zap, Target, Globe } from 'lucide-react';
+import { Brain, MessageSquare, Trophy, ArrowRight, PlayCircle, Zap, Target} from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
@@ -40,16 +40,17 @@ const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black-100 to-slate-900 text-white overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white overflow-hidden">
+    
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute top-3/4 right-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
         <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl animate-pulse" style={{animationDelay: '2s'}}></div>
       </div>
-      <Header />
-      {/* Navigation */}
       
+      {/* Navigation */}
+      <Header />
 
       {/* Hero Section */}
       <section className="relative z-10 container mx-auto px-6 py-20">
@@ -120,6 +121,7 @@ const Home = () => {
 
       {/* Footer */}
       <Footer/>
+    
     </div>
   );
 };

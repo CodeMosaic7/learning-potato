@@ -1,41 +1,7 @@
-import {useState, useRef,useEffect } from 'react';
-import { Upload, Send, BookOpen, Camera, User, Bot, Star, Clock, Brain, AlertCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-
-// Mock API function - replace with your actual import
-const uploadHomeworkImage = async (file) => {
-  const navigate = useNavigate();
-  useEffect(() => {
-      const userData = sessionStorage.getItem('user_data');
-      if (userData) {
-        setUser(JSON.parse(userData));
-      } else {
-        navigate('/');
-      }
-    }, [navigate]);
-  if (!file.type.startsWith('image/')) {
-    throw new Error('Please select an image file');
-  }
-  const formData = new FormData();
-  formData.append('file', file);
-  try {
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    return {
-      success: true,
-      analysis: "I can see this is a math problem involving quadratic equations. Let me help you solve this step by step.",
-      subject: "Mathematics",
-      difficulty: "Medium",
-      suggestions: [
-        "First, let's identify the coefficients a, b, and c",
-        "Then we'll use the quadratic formula",
-        "Finally, we'll simplify the solution"
-      ]
-    };
-  } catch (error) {
-    throw new Error(error.response?.data?.detail || `Upload failed`);
-  }
-};
-
+import { useState, useRef } from 'react';
+import { Send, BookOpen, Camera, User, Bot, Star, Clock, Brain, AlertCircle } from 'lucide-react';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 const HomeWorkHelper = () => {
   const [messages, setMessages] = useState([
     {
@@ -46,19 +12,17 @@ const HomeWorkHelper = () => {
     }
   ]);
   const [inputText, setInputText] = useState('');
-  const [uploadedImage, setUploadedImage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Subject categories for better assistance
   const subjects = [
-    { name: 'Mathematics', icon: '📐', color: 'bg-blue-500' },
-    { name: 'Science', icon: '🧪', color: 'bg-green-500' },
-    { name: 'English', icon: '📖', color: 'bg-purple-500' },
-    { name: 'History', icon: '📜', color: 'bg-orange-500' },
-    { name: 'Geography', icon: '🌍', color: 'bg-teal-500' },
-    { name: 'Other', icon: '🎓', color: 'bg-pink-500' }
+    { name: 'Mathematics', icon: '📐', color: 'from-blue-500/10 to-blue-600/10 border-blue-500/30 hover:border-blue-400/50' },
+    { name: 'Science', icon: '🧪', color: 'from-green-500/10 to-green-600/10 border-green-500/30 hover:border-green-400/50' },
+    { name: 'English', icon: '📖', color: 'from-purple-500/10 to-purple-600/10 border-purple-500/30 hover:border-purple-400/50' },
+    { name: 'History', icon: '📜', color: 'from-orange-500/10 to-orange-600/10 border-orange-500/30 hover:border-orange-400/50' },
+    { name: 'Geography', icon: '🌍', color: 'from-teal-500/10 to-teal-600/10 border-teal-500/30 hover:border-teal-400/50' },
+    { name: 'Other', icon: '🎓', color: 'from-pink-500/10 to-pink-600/10 border-pink-500/30 hover:border-pink-400/50' }
   ];
 
   const handleImageUpload = async (event) => {
@@ -69,14 +33,6 @@ const HomeWorkHelper = () => {
     setUploadError(null);
 
     try {
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setUploadedImage(e.target.result);
-      };
-      reader.readAsDataURL(file);
-
-      // Add user message with image
       const userMessage = {
         id: Date.now(),
         sender: 'user',
@@ -86,40 +42,33 @@ const HomeWorkHelper = () => {
       };
       setMessages(prev => [...prev, userMessage]);
 
-      // Call API
-      const response = await uploadHomeworkImage(file);
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Add AI response based on API result
       const aiResponse = {
         id: Date.now() + 1,
         sender: 'bot',
-        text: response.analysis || "I've analyzed your homework! Let me help you understand this step by step.",
+        text: "I can see this is a math problem involving quadratic equations. Let me help you solve this step by step.",
         metadata: {
-          subject: response.subject,
-          difficulty: response.difficulty,
-          suggestions: response.suggestions
+          subject: "Mathematics",
+          difficulty: "Medium"
         },
         timestamp: new Date()
       };
       setMessages(prev => [...prev, aiResponse]);
 
-      // Add suggestions if available
-      if (response.suggestions && response.suggestions.length > 0) {
-        const suggestionsMessage = {
-          id: Date.now() + 2,
-          sender: 'bot',
-          text: "Here's how we can approach this:\n\n" + response.suggestions.map((suggestion, index) => `${index + 1}. ${suggestion}`).join('\n'),
-          timestamp: new Date()
-        };
-        setTimeout(() => {
-          setMessages(prev => [...prev, suggestionsMessage]);
-        }, 1000);
-      }
+      const suggestionsMessage = {
+        id: Date.now() + 2,
+        sender: 'bot',
+        text: "Here's how we can approach this:\n\n1. First, let's identify the coefficients a, b, and c\n2. Then we'll use the quadratic formula\n3. Finally, we'll simplify the solution",
+        timestamp: new Date()
+      };
+      setTimeout(() => {
+        setMessages(prev => [...prev, suggestionsMessage]);
+      }, 1000);
 
     } catch (error) {
       setUploadError(error.message);
       
-      // Add error message
       const errorMessage = {
         id: Date.now() + 1,
         sender: 'bot',
@@ -130,7 +79,6 @@ const HomeWorkHelper = () => {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -151,7 +99,6 @@ const HomeWorkHelper = () => {
     setMessages(prev => [...prev, newMessage]);
     setInputText('');
 
-    // Simulate AI response
     setTimeout(() => {
       const responses = [
         "Let me break this down for you step by step. First, let's identify what we know and what we need to find...",
@@ -187,8 +134,9 @@ const HomeWorkHelper = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black-100 to-slate-900 text-white overflow-hidden">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white overflow-hidden py-8">
+      <div className="max-w-4xl mx-auto px-6">
+        <Header />
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
@@ -201,7 +149,7 @@ const HomeWorkHelper = () => {
 
         {/* Error Alert */}
         {uploadError && (
-          <div className="bg-red-500/20 border border-red-400/50 rounded-xl p-4 mb-6 flex items-center">
+          <div className="bg-red-500/20 backdrop-blur-sm border border-red-400/50 rounded-xl p-4 mb-6 flex items-center">
             <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
             <p className="text-red-200">{uploadError}</p>
             <button 
@@ -218,7 +166,7 @@ const HomeWorkHelper = () => {
           {subjects.map((subject, index) => (
             <div
               key={index}
-              className={`${subject.color} bg-opacity-20 backdrop-blur-sm border border-white/20 rounded-xl p-3 text-center hover:bg-opacity-30 transition-all cursor-pointer`}
+              className={`bg-gradient-to-r ${subject.color} backdrop-blur-sm border rounded-xl p-3 text-center transition-all cursor-pointer hover:scale-105`}
             >
               <div className="text-2xl mb-1">{subject.icon}</div>
               <div className="text-white text-xs font-medium">{subject.name}</div>
@@ -227,9 +175,9 @@ const HomeWorkHelper = () => {
         </div>
 
         {/* Chat Container */}
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl overflow-hidden">
+        <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-sm border border-purple-500/30 rounded-3xl overflow-hidden hover:border-purple-400/50 transition-all">
           {/* Chat Header */}
-          <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-4">
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4">
             <div className="flex items-center">
               <Bot className="text-white mr-3" size={24} />
               <div>
@@ -243,7 +191,7 @@ const HomeWorkHelper = () => {
           </div>
 
           {/* Messages Area */}
-          <div className="h-96 overflow-y-auto p-4 space-y-4">
+          <div className="h-96 overflow-y-auto p-4 space-y-4 bg-slate-900/50">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -255,7 +203,7 @@ const HomeWorkHelper = () => {
                       ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
                       : message.isError
                       ? 'bg-red-500/20 backdrop-blur-sm text-red-200 border border-red-400/50'
-                      : 'bg-white/20 backdrop-blur-sm text-white border border-white/20'
+                      : 'bg-white/10 backdrop-blur-sm text-white border border-white/20'
                   }`}
                 >
                   <div className="flex items-start space-x-2">
@@ -275,7 +223,6 @@ const HomeWorkHelper = () => {
                       )}
                       <p className="text-sm leading-relaxed whitespace-pre-line">{message.text}</p>
                       
-                      {/* Display metadata if available */}
                       {message.metadata && (
                         <div className="mt-2 p-2 bg-white/10 rounded-lg border border-white/20">
                           <div className="text-xs text-purple-200 space-y-1">
@@ -296,7 +243,7 @@ const HomeWorkHelper = () => {
             
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-white/20 backdrop-blur-sm text-white border border-white/20 px-4 py-3 rounded-2xl">
+                <div className="bg-white/10 backdrop-blur-sm text-white border border-white/20 px-4 py-3 rounded-2xl">
                   <div className="flex items-center space-x-2">
                     <Bot className="text-purple-300" size={16} />
                     <div className="flex space-x-1">
@@ -311,14 +258,14 @@ const HomeWorkHelper = () => {
           </div>
 
           {/* Suggested Questions */}
-          <div className="px-4 py-2 border-t border-white/20">
+          <div className="px-4 py-3 border-t border-purple-500/30 bg-slate-900/30">
             <div className="flex flex-wrap gap-2">
               {suggestedQuestions.map((question, index) => (
                 <button
                   key={index}
                   onClick={() => setInputText(question)}
                   disabled={isLoading}
-                  className="bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs px-3 py-1 rounded-full border border-white/20 transition-all"
+                  className="bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs px-3 py-1.5 rounded-full border border-white/20 transition-all"
                 >
                   {question}
                 </button>
@@ -327,12 +274,12 @@ const HomeWorkHelper = () => {
           </div>
 
           {/* Input Area */}
-          <div className="p-4 border-t border-white/20">
+          <div className="p-4 border-t border-purple-500/30 bg-slate-900/30">
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading}
-                className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-white p-3 rounded-full transition-all shadow-lg hover:shadow-xl"
+                className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-white p-3 rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-105"
               >
                 <Camera size={20} />
               </button>
@@ -344,7 +291,7 @@ const HomeWorkHelper = () => {
                   onKeyPress={handleKeyPress}
                   disabled={isLoading}
                   placeholder="Ask about your homework, upload an image, or describe what you need help with..."
-                  className="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-3 text-white placeholder-purple-200 focus:outline-none focus:border-purple-400 focus:bg-white/20 disabled:opacity-50 transition-all resize-none"
+                  className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 transition-all resize-none"
                   rows={2}
                 />
               </div>
@@ -352,7 +299,7 @@ const HomeWorkHelper = () => {
               <button
                 onClick={handleSendMessage}
                 disabled={inputText.trim() === '' || isLoading}
-                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-white p-3 rounded-full transition-all shadow-lg hover:shadow-xl"
+                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-white p-3 rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-105"
               >
                 <Send size={20} />
               </button>
@@ -370,12 +317,7 @@ const HomeWorkHelper = () => {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-6">
-          <p className="text-purple-200 text-sm flex items-center justify-center">
-            <BookOpen className="mr-2" size={16} />
-            Learning made easy with AI assistance
-          </p>
-        </div>
+       <Footer/>
       </div>
     </div>
   );
