@@ -1,17 +1,15 @@
-from langgraph.graph import StateGraph, END,START
-from typing import TypedDict, Literal
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_openai import ChatOpenAI
 import os
+import json
 import dotenv
-from typing_extensions import Literal
-from langchain.messages import AIMeasage, HumanMessage, SystemMessage
-from app.services.chatbot.rate_limiter import llm_rate_limiter
+from langgraph.graph import StateGraph, END
+from typing import TypedDict, Literal
+from rate_limiter import llm_rate_limiter
+from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
+
 
 dotenv.load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
-
-# Routing Logic to be used here.
 
 # wrapper to limit llm calls
 @llm_rate_limiter
@@ -23,14 +21,16 @@ class State(TypedDict):
     username:str
     user_input: str
     conversation_history: list
-    evaluation_complete: bool 
     
     # Age assessment fields
     estimated_age: int  
     age_category: str  
     age_confidence: int 
     age_indicators: list  
-    
+
+    age_questions_asked: int
+    age_answers: list
+        
     # Mental state fields
     assessment_score: int  
     primary_concern: str  
@@ -42,34 +42,138 @@ class State(TypedDict):
     needs_more_info: bool
     final_guidance: str
 
-# llm = ChatGoogleGenerativeAI(
-#     model="gemini-2.0-flash-exp",
-#     google_api_key=api_key,
-#     temperature=0.6,
-#     max_tokens=500,
-#     limit_response_tokens=True,
-#     convert_system_message_to_human=True
-# )
+    # checks
+    age_assessment_complete: bool
+    mental_assessment_complete: bool
+    follow_up_done: bool
 
-
-llm = ChatOpenAI(
-    model="gpt-3.5-turbo",
-    api_key=os.getenv("OPENAI_API_KEY"),
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash-exp",
+    google_api_key=api_key,
     temperature=0.6,
-    max_tokens=400
+    max_tokens=500,
+    limit_response_tokens=True,
+    convert_system_message_to_human=True
 )
-# === NODES ===
 
+
+# llm = ChatOpenAI(
+#     model="gpt-3.5-turbo",
+#     api_key=os.getenv("OPENAI_API_KEY"),
+#     temperature=0.6,
+#     max_tokens=400
+# )
+# === NODES ===
 def welcome_node(state: State) -> State:
     """Welcome the user and start conversation"""
     welcome_msg = "Hello! I'm here to support you. How are you feeling today? Feel free to share what's on your mind."
-    
     state["conversation_history"] = [{"role": "assistant", "content": welcome_msg}]
     state["needs_more_info"] = True
     state["age_indicators"] = []
-    
+    print("DEBUG: Starting new session.")
     print(f"\n🤖 Assistant: {welcome_msg}")
     return state
+
+def age_question_generator(state: State) -> State:
+    """Generates the age assessment questions"""
+    print("DEBUG: Starting assessment.")
+
+    prev_ans=state.get("age_answers", [])
+    ques_no=state.get("age_questions_asked", 0)
+    prompt = f"""
+You are an expert cognitive psychologist. 
+You are estimating the user's **intellectual age**.
+
+User's previous answers: {prev_ans}
+
+Generate ONLY the next question (no explanation) that helps assess:
+- abstract reasoning
+- emotional maturity
+- decision-making style
+- impulse control
+- future planning
+
+Make it short, clear, and age-diagnostic.
+
+Return:
+QUESTION: <question>
+"""
+    response = safe_invoke(prompt)
+    question = response.content.split("QUESTION:")[1].strip()
+    state["current_response"] = question
+    state["conversation_history"].append({
+        "role": "assistant",
+        "content": question
+    })
+    print(f"\nDEBUG: Assistant: {question}")
+    return state
+
+def age_ans_node(state: State) -> State:
+    """Process the user's answer to age question"""
+    user_input = state.get("user_input", "")
+    prev_ans=state.get("age_answers", [])
+    prev_ans.append(user_input)
+    state["age_answers"]=prev_ans
+    state["age_questions_asked"]=state.get("age_questions_asked",0)+1
+    return state
+
+def age_router_node(state: State) -> Literal["ask_more", "evaluate_age", "skip"]:
+    """Decide whether to ask more age questions or evaluate"""
+    if state.get("age_assessment_complete", False):
+        return state, "skip"
+    if state["age_questions_asked"] >= 5:
+        return state, "evaluate_age"
+    return state, "ask_more"
+
+
+def age_evaluation_node(state: State) -> State:
+    """Evaluate the user's intellectual age based on their answers"""
+    answers = state.get("age_answers", [])
+
+    prompt = f"""
+You are a cognitive psychologist estimating the user's **intellectual age**.
+
+Here are the user's answers to age-assessment questions:
+{answers}
+
+Evaluate and return ONLY a JSON object:
+
+{{
+  "estimated_age": <number>,
+  "confidence": <0-10>,
+  "category": "child/teen/young_adult/adult",
+  "indicators": [
+      "short description of reasoning",
+      "short description of emotional maturity",
+      "short description of decision patterns"
+  ]
+}}
+"""
+
+    result = safe_invoke(prompt).content
+
+
+    data = json.loads(result)
+
+    state["estimated_age"] = data["estimated_age"]
+    state["age_confidence"] = data["confidence"]
+    state["age_category"] = data["category"]
+    state["age_indicators"] = data["indicators"]
+
+    state["age_assessment_complete"] = True
+
+    state["current_response"] = (
+        f"Thanks! I’ve finished understanding your thinking style. "
+        f"Estimated intellectual age: {data['estimated_age']} ({data['category']})."
+    )
+
+    state["conversation_history"].append({
+        "role": "assistant",
+        "content": state["current_response"]
+    })
+
+    return state
+
 
 # need to refine: use rag to pull in relevant knowledge
 def mental_state_assessor_node(state: State) -> State:
@@ -117,28 +221,7 @@ Consider age-appropriate concerns and expression styles."""
     print(f"   Urgency: {state.get('assessment_score', 0)}/10")
     print(f"   Concern: {state.get('primary_concern', 'Unknown')}")
     print(f"   Risk: {state.get('risk_level', 'Unknown')}")
-    
-    return state
-
-def conversation_router_node(state: State) -> State:
-    """Decide if we need more info or can provide guidance"""
-    age_confidence = state.get("age_confidence", 0)
-    assessment_score = state.get("assessment_score", 5)
-    
-    # Need at least 2-3 interactions unless it's an emergency
-    if assessment_score < 8:
-        state["needs_more_info"] = True
-        state["evaluation_complete"] = False
-    elif age_confidence >= 7:
-        state["needs_more_info"] = False
-        state["evaluation_complete"] = True
-    elif assessment_score >= 8: 
-        state["needs_more_info"] = False
-        state["evaluation_complete"] = True
-    else:
-        state["needs_more_info"] = True
-        state["evaluation_complete"] = False
-    
+    state["mental_assessment_complete"] = True
     return state
 
 def follow_up_node(state: State) -> State:
@@ -166,6 +249,8 @@ Keep it conversational and supportive. Make them feel heard."""
     })
     
     print(f"\n💬 Assistant: {follow_up}")
+    state["follow_up_done"] = True
+
     return state
 
 def guidance_node(state: State) -> State:
@@ -215,58 +300,96 @@ Make it warm, practical, and hopeful."""
         "content": guidance
     })
     
-    print(f"\n✨ Final Guidance:\n{guidance}")
+    print(f"\nFinal Guidance:\n{guidance}")
+    return state
+
+def chat_service_node(state: State) -> State:
+    prompt = f"""
+Continue as a supportive counselor + general AI assistant.
+
+User said:
+"{state['user_input']}"
+
+Provide helpful, safe, supportive, and optionally informative guidance.
+    """
+    response = safe_invoke(prompt).content
+    state["current_response"] = response
+    state["conversation_history"].append({"role": "assistant", "content": response})
     return state
 
 
-def route_decision(state: State):
-    """Route based on the intent detected using LLM"""
-    if state["decision"] == "story":
-        return "llm_call_1"
-    elif state["decision"] == "joke":
-        return "llm_call_2"
 
-def route_after_assessment(state: State) -> Literal["follow_up", "guidance"]:
-    """Route based on whether we need more information"""
-    needs_more = state.get("needs_more_info", True)
-    
-    if needs_more:
-        return "follow_up"
-    else:
+def router_node(state: State):
+    if not state["age_assessment_complete"]:
+        return "age_question_generator"
+
+    if not state["mental_assessment_complete"]:
+        return "mental_state_assessor"
+
+    if state["risk_level"] == "high":
         return "guidance"
+
+    if not state["follow_up_done"]:
+        return "follow_up"
+
+    return "guidance"
+
 
 # === WORKFLOW ===
 
 workflow = StateGraph(State)
 
 # Add all nodes
+# === NODES ===
 workflow.add_node("welcome", welcome_node)
-workflow.add_node("age_evaluator",evaluator_node)
+workflow.add_node("age_question_generator", age_question_generator)
+workflow.add_node("age_answer", age_ans_node)
+workflow.add_node("age_evaluation", age_evaluation_node)
+workflow.add_node("chat_service_node", chat_service_node)
 workflow.add_node("mental_state_assessor", mental_state_assessor_node)
-workflow.add_node("conversation_router", conversation_router_node)
 workflow.add_node("follow_up", follow_up_node)
 workflow.add_node("guidance", guidance_node)
+workflow.add_node("router", router_node)
+workflow.add_node("age_router", lambda state: state) 
 
-# Define flow
-workflow.set_entry_point(START,"welcome")
-workflow.add_edge("welcome", "evaluator") #router node
-workflow.add_edge("evaluator", "mental_state_assessor")
-workflow.add_edge("mental_state_assessor", "conversation_router")
-
-# Conditional routing
+# === CONDITIONAL NODES ===
+# Age router as a conditional node
 workflow.add_conditional_edges(
-    "conversation_router",
-    route_after_assessment,
+    "age_router",
+    age_router_node,
     {
+        "ask_more": "age_question_generator",
+        "evaluate_age": "age_evaluation",
+        "skip": "router"
+    }
+)
+
+# Main router as conditional node
+workflow.add_conditional_edges(
+    "router",
+    router_node,
+    {
+        "age_question_generator": "age_question_generator",
+        "mental_state_assessor": "mental_state_assessor",
         "follow_up": "follow_up",
         "guidance": "guidance"
     }
 )
 
+# === EDGES ===
+workflow.set_entry_point("welcome")
+workflow.add_edge("welcome", "age_router")
+workflow.add_edge("age_question_generator", "age_answer")
+workflow.add_edge("age_answer", "age_router")
+workflow.add_edge("age_evaluation", "mental_state_assessor")
 workflow.add_edge("follow_up", END)
-workflow.add_edge("guidance", END)
+workflow.add_edge("guidance", "chat_service_node")
+workflow.add_edge("chat_service_node", "chat_service_node") 
 
+# === COMPILE ===
 app = workflow.compile()
+print(app)
+
 
 # === INTERACTIVE SESSION ===
 
@@ -279,21 +402,26 @@ def run_interactive_session():
     
     # Initialize state
     state = {
-        "user_input": "",
-        "conversation_history": [],
-        "evaluation_complete": False,
-        "estimated_age": 0,
-        "age_category": "",
-        "age_confidence": 0,
-        "age_indicators": [],
-        "assessment_score": 0,
-        "primary_concern": "",
-        "emotional_state": "",
-        "risk_level": "",
-        "current_response": "",
-        "needs_more_info": True,
-        "final_guidance": ""
-    }
+    "user_input": "",
+    "conversation_history": [],
+    "estimated_age": 0,
+    "age_category": "",
+    "age_confidence": 0,
+    "age_indicators": [],
+    "assessment_score": 0,
+    "primary_concern": "",
+    "emotional_state": "",
+    "risk_level": "",
+    "current_response": "",
+    "needs_more_info": True,
+    "final_guidance": "",
+    "age_assessment_complete": False,
+    "mental_assessment_complete": False,
+    "follow_up_done": False,
+    "age_questions_asked": 0,
+    "age_answers": [],
+}
+
     
     # Start with welcome
     state = app.invoke(state)
