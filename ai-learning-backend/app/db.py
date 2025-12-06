@@ -24,3 +24,5 @@ if __name__ == "__main__":
     print("✅ Database and tables created successfully.")
 
 # Mongodb aetup
+
+

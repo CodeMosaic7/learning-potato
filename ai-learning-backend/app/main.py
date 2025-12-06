@@ -10,6 +10,7 @@ from app.authentication.routes import router as auth_router
 from app.router.chatbot import router as chatbot_router
 from app.router.quiz import router as quiz_router
 from app.router.homework import router as hw_router
+from app.mongo_db import connect_mongo_db, close_mongo_db
 import os
 
 Base.metadata.create_all(bind=engine)
@@ -25,6 +26,13 @@ app.add_middleware(
     allow_headers=["*"],
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 )
+@app.on_event("startup")
+async def startup_event():
+    client,db=connect_mongo_db()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    close_mongo_db(client)
 
 @app.get("/")
 async def root():
