@@ -4,51 +4,12 @@ from datetime import datetime
 from typing import Optional, List
 
 # === USER SCHEMAS ===
-class UserBase(BaseModel):
-    email: EmailStr
-    username: str
-    full_name: Optional[str] = None
-
-class UserCreate(UserBase):
-    full_name:str
-    username:str
-    email:str
-    password: str
   
-class UserResponse(UserBase):
-    id: int
-    is_active: bool
-    is_verified: bool
-    created_at: datetime
-    mental_age: Optional[int] = None
-    assessment_date: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
-
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
 
 class TokenData(BaseModel):
     email: Optional[str] = None
 
-class UserDetails(UserBase):
-    id: int
-    is_active: bool
-    is_verified: bool
-    created_at: datetime
-    mental_age: Optional[int] = None
-    intellect_level: Optional[str] = None
-    assesment_progress: Optional[str] = None
-    assessment_date: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
 
 # === CHATBOT SCHEMAS ===
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
-from datetime import timedelta, datetime
+from datetime import timedelta
 from dotenv import load_dotenv
-
+import datetime
 from app.dependencies import get_db
 from app.model.user_model import UserCreate, UserResponse, UserLogin, Token, UserOut
 from app.authentication.auth import (
@@ -11,11 +11,11 @@ from app.authentication.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     get_current_user
 )
+from app.middleware.cloudinary_middleware import upload_profile_image
 
 load_dotenv()
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
-
 
 # REGISTER
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
@@ -36,6 +36,7 @@ async def register_user(user: UserCreate, db=Depends(get_db)):
             raise HTTPException(status_code=400, detail="Email already registered")
         else:
             raise HTTPException(status_code=400, detail="Username already taken")
+    url=await upload_profile_image(image_data=user.profile_image,user_id=user.username)
 
     hashed_password = get_password_hash(user.password)
 
@@ -47,7 +48,7 @@ async def register_user(user: UserCreate, db=Depends(get_db)):
         "date_of_birth": user.date_of_birth,
         "gender": user.gender,
         "grade_level": user.grade_level,
-        "profile_image": user.profile_image,
+        "profile_image": url,
         "created_at": datetime.utcnow(),
     }
 
@@ -88,7 +89,6 @@ async def login_user(login_data: UserLogin, response: Response, db=Depends(get_d
 
 
 # USER INFO ENDPOINTS
-
 @router.get("/me", response_model=UserResponse)
 async def read_users_me(current_user=Depends(get_current_user)):
     return current_user

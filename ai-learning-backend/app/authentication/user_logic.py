@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from typing import Optional
 import json
 class UserDatabase:
+    
     def __init__(self, db_session: Session):
         self.db = db_session
 
