@@ -1,112 +1,121 @@
-from fastapi import APIRouter, Depends, HTTPException, status,Response,Request
-from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-from datetime import timedelta
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
+from datetime import timedelta, datetime
 from dotenv import load_dotenv
 
 from app.dependencies import get_db
-from app.models import User
-from app.schemas import UserCreate, UserResponse, Token,UserLogin
+from app.model.user_model import UserCreate, UserResponse, UserLogin, Token, UserOut
 from app.authentication.auth import (
-    get_password_hash, 
-    authenticate_user, 
-    create_access_token, 
-    # get_current_active_user,
+    get_password_hash,
+    verify_password,
+    create_access_token,
     ACCESS_TOKEN_EXPIRE_MINUTES,
     get_current_user
 )
-
-import os
 
 load_dotenv()
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    # look for user in database, if it exists
-    existing_user = db.query(User).filter(
-        (User.email == user.email) | (User.username == user.username)
-    ).first()
-    # if user already exists, raise an error
+
+# REGISTER
+@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+async def register_user(user: UserCreate, db=Depends(get_db)):
+
+    users_collection = db["users"]
+
+    # check if user exists
+    existing_user = await users_collection.find_one({
+        "$or": [
+            {"email": user.email},
+            {"username": user.username}
+        ]
+    })
+
     if existing_user:
-        if existing_user.email == user.email:
-            print(user.email)
+        if existing_user.get("email") == user.email:
             raise HTTPException(status_code=400, detail="Email already registered")
         else:
             raise HTTPException(status_code=400, detail="Username already taken")
-    # else create a new user
-    hashed_password = get_password_hash(user.password)
-    db_user = User(
-        full_name=user.full_name,
-        username=user.username,
-        email=user.email,        
-        hashed_password=hashed_password
-    )
-    try:
-        # add to database
-        db.add(db_user)
-        db.commit()
-        db.refresh(db_user)
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=400, detail="User registration failed")
-    return db_user
 
-@router.post("/login", response_model=Token)
-async def login_user(login_data: UserLogin,response: Response, db: Session = Depends(get_db)):
-    # look if user exists
-    # authenticate user
-    user = authenticate_user(db, login_data.email, login_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    # generate access token
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
+    hashed_password = get_password_hash(user.password)
+
+    db_user = {
+        "name": user.name,
+        "username": user.username,
+        "email": user.email,
+        "password_hash": hashed_password,
+        "date_of_birth": user.date_of_birth,
+        "gender": user.gender,
+        "grade_level": user.grade_level,
+        "profile_image": user.profile_image,
+        "created_at": datetime.utcnow(),
+    }
+
+    result = await users_collection.insert_one(db_user)
+
+    return UserOut(
+        id=str(result.inserted_id),
+        **db_user
     )
-    # print("DEBUG:",access_token)
-    # set access token in response cookies
+
+
+# LOGIN
+@router.post("/login", response_model=Token)
+async def login_user(login_data: UserLogin, response: Response, db=Depends(get_db)):
+
+    users_collection = db["users"]
+    user = await users_collection.find_one({"email": login_data.email})
+
+    if not user or not verify_password(login_data.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Incorrect email or password")
+
+    access_token = create_access_token(
+        data={"sub": user["email"]},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+
     response.set_cookie(
         key="access_token",
-        value=access_token,  
+        value=access_token,
         httponly=True,
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        # samesite="lax",  # "lax" for development, "None" for production
         samesite="None",
-        #secure=False,
-        secure=True, 
+        secure=True
     )
-    print(f"DEBUG: Created access token: {access_token[:20]}...")
+
     return {"access_token": access_token, "token_type": "bearer"}
 
+
+
+# USER INFO ENDPOINTS
+
 @router.get("/me", response_model=UserResponse)
-async def read_users_me(current_user: User = Depends(get_current_user)):
-    print(f"Current user in /me route: {current_user}")
+async def read_users_me(current_user=Depends(get_current_user)):
     return current_user
+
+
 @router.get("/user-details", response_model=UserResponse)
-async def get_user_details(current_user: User = Depends(get_current_user)):
+async def get_user_details(current_user=Depends(get_current_user)):
     return current_user
 
-@router.get("/protected")
-async def protected_route(current_user: User = Depends(get_current_user)):
-    return {"message": f"Hello {current_user.username}, this is a protected route!"}
 
+# PROTECTED
+@router.get("/protected")
+async def protected_route(current_user=Depends(get_current_user)):
+    return {"message": f"Hello {current_user['username']}, this is a protected route!"}
+
+
+# LOGOUT
 @router.post("/logout")
 async def logout(response: Response):
     response.delete_cookie(key="access_token")
     return {"message": "Logged out successfully"}
 
+
+
+# DEBUG TOKEN
 @router.get("/debug-token")
 async def debug_token(request: Request):
     headers = dict(request.headers)
     auth_header = headers.get("authorization", "Not found")
-    return {
-        "auth_header": auth_header,
-        "headers": headers
-    }
+    return {"auth_header": auth_header, "headers": headers}

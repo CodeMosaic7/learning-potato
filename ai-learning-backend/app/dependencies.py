@@ -1,8 +1,5 @@
-from app.db import SessionLocal
+from fastapi import Depends
+from .mongo_db import db
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db():
+    return db
