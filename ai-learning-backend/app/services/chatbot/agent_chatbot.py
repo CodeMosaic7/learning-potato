@@ -15,6 +15,7 @@ def safe_invoke(prompt):
     return llm.invoke(prompt)
 
 # State
+# this state keeps track of the conversation and assessment data, so need to store this in a database
 class State(TypedDict):
     username:str
     user_input: str
@@ -45,25 +46,30 @@ class State(TypedDict):
     mental_assessment_complete: bool
     follow_up_done: bool
 
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash-exp",
-    google_api_key=api_key,
-    temperature=0.6,
-    max_tokens=500,
-    limit_response_tokens=True,
-    convert_system_message_to_human=True
-)
-# llm = ChatOpenAI(
-#     model="gpt-3.5-turbo",
-#     api_key=os.getenv("OPENAI_API_KEY"),
+    # flags
+    router_flag: Literal["age_question_generator", "mental_state_assessor", "follow_up", "guidance"]
+    age_router_flag: Literal["ask_more", "evaluate_age", "skip"]
+
+# llm = ChatGoogleGenerativeAI(
+#     model="gemini-2.0-flash-exp",
+#     google_api_key=api_key,
 #     temperature=0.6,
-#     max_tokens=400
+#     max_tokens=500,
+#     limit_response_tokens=True,
+#     convert_system_message_to_human=True
 # )
+llm = ChatOpenAI(
+    model="gpt-3.5-turbo",
+    api_key=os.getenv("OPENAI_API_KEY"),
+    temperature=0.6,
+    max_tokens=400
+)
 # === NODES ===
 def welcome_node(state: State) -> State:
     """Welcome the user and start conversation"""
     welcome_msg = "Hello! I'm here to support you. How are you feeling today? Feel free to share what's on your mind."
     state["conversation_history"] = [{"role": "assistant", "content": welcome_msg}]
+    print("DEBUG:",state["conversation_history"])
     state["needs_more_info"] = True
     state["age_indicators"] = []
     print("DEBUG: Starting new session.")
@@ -73,7 +79,6 @@ def welcome_node(state: State) -> State:
 def age_question_generator(state: State) -> State:
     """Generates the age assessment questions"""
     print("DEBUG: Starting assessment.")
-
     prev_ans=state.get("age_answers", [])
     ques_no=state.get("age_questions_asked", 0)
     prompt = f"""
@@ -113,13 +118,22 @@ def age_ans_node(state: State) -> State:
     state["age_questions_asked"]=state.get("age_questions_asked",0)+1
     return state
 
-def age_router_node(state: State) -> Literal["ask_more", "evaluate_age", "skip"]:
-    """Decide whether to ask more age questions or evaluate"""
-    if state.get("age_assessment_complete", False):
-        return state, "skip"
-    if state["age_questions_asked"] >= 5:
-        return state, "evaluate_age"
-    return state, "ask_more"
+def age_router_node(state: State):
+    """Update state, then decide route in conditional edge function."""
+
+    # No routing here — only update state if needed
+    return {
+        **state,
+        "age_router_flag": (
+            "skip" if state.get("age_assessment_complete")
+            else "evaluate_age" if state["age_questions_asked"] >= 5
+            else "ask_more"
+        )
+    }
+
+def age_route_decision(state: State):
+    return state["age_router_flag"]
+
 
 
 def age_evaluation_node(state: State) -> State:
@@ -301,41 +315,40 @@ Provide helpful, safe, supportive, and optionally informative guidance.
     return state
 
 def router_node(state: State):
-    if not state["age_assessment_complete"]:
-        return "age_question_generator"
+    return {
+        **state,
+        "router_flag": (
+            "age_question_generator" if not state.get("age_assessment_complete")
+            else "mental_state_assessor" if not state.get("mental_assessment_complete")
+            else "follow_up" if not state.get("follow_up_done")
+            else "guidance"
+        )
+    }
 
-    if not state["mental_assessment_complete"]:
-        return "mental_state_assessor"
-
-    if state["risk_level"] == "high":
-        return "guidance"
-
-    if not state["follow_up_done"]:
-        return "follow_up"
-
-    return "guidance"
+def router_decision(state: State):
+    return state["router_flag"]
 
 # === WORKFLOW ===
 workflow = StateGraph(State)
 
-# Add all nodes
-# === NODES ===
+# Add all nodes first
 workflow.add_node("welcome", welcome_node)
 workflow.add_node("age_question_generator", age_question_generator)
 workflow.add_node("age_answer", age_ans_node)
+workflow.add_node("age_router", age_router_node)
 workflow.add_node("age_evaluation", age_evaluation_node)
-workflow.add_node("chat_service_node", chat_service_node)
 workflow.add_node("mental_state_assessor", mental_state_assessor_node)
 workflow.add_node("follow_up", follow_up_node)
 workflow.add_node("guidance", guidance_node)
 workflow.add_node("router", router_node)
-workflow.add_node("age_router", lambda state: state) 
 
-# === CONDITIONAL NODES ===
-# Age router as a conditional node
+# Set entry point
+workflow.set_entry_point("welcome")
+
+# Add conditional edges
 workflow.add_conditional_edges(
     "age_router",
-    age_router_node,
+    age_route_decision,
     {
         "ask_more": "age_question_generator",
         "evaluate_age": "age_evaluation",
@@ -343,10 +356,9 @@ workflow.add_conditional_edges(
     }
 )
 
-# Main router as conditional node
 workflow.add_conditional_edges(
     "router",
-    router_node,
+    router_decision,
     {
         "age_question_generator": "age_question_generator",
         "mental_state_assessor": "mental_state_assessor",
@@ -355,77 +367,83 @@ workflow.add_conditional_edges(
     }
 )
 
-# === EDGES ===
-workflow.set_entry_point("welcome")
+# Add regular edges
 workflow.add_edge("welcome", "age_router")
 workflow.add_edge("age_question_generator", "age_answer")
 workflow.add_edge("age_answer", "age_router")
-workflow.add_edge("age_evaluation", "mental_state_assessor")
+workflow.add_edge("age_evaluation", "router")
+workflow.add_edge("mental_state_assessor", "router")
 workflow.add_edge("follow_up", END)
-workflow.add_edge("guidance", "chat_service_node")
-workflow.add_edge("chat_service_node", "chat_service_node") 
-
+workflow.add_edge("guidance", END)
 # === COMPILE ===
 app = workflow.compile()
 print(app)
 
 # === INTERACTIVE SESSION ===
 def run_interactive_session():
-    """Run an interactive counseling session"""
     print("\n" + "="*80)
     print("🏥 Mental Health Counseling Chatbot - Interactive Mode")
     print("="*80)
     print("Type 'quit' to exit\n")
     
-    # Initialize state
     state = {
-    "user_input": "",
-    "conversation_history": [],
-    "estimated_age": 0,
-    "age_category": "",
-    "age_confidence": 0,
-    "age_indicators": [],
-    "assessment_score": 0,
-    "primary_concern": "",
-    "emotional_state": "",
-    "risk_level": "",
-    "current_response": "",
-    "needs_more_info": True,
-    "final_guidance": "",
-    "age_assessment_complete": False,
-    "mental_assessment_complete": False,
-    "follow_up_done": False,
-    "age_questions_asked": 0,
-    "age_answers": [],
-}  
-    # Start with welcome
-    state = app.invoke(state)    
+        "user_input": "",
+        "conversation_history": [],
+        "estimated_age": 0,
+        "age_category": "",
+        "age_confidence": 0,
+        "age_indicators": [],
+        "assessment_score": 0,
+        "primary_concern": "",
+        "emotional_state": "",
+        "risk_level": "",
+        "current_response": "",
+        "needs_more_info": True,
+        "final_guidance": "",
+        "age_assessment_complete": False,
+        "mental_assessment_complete": False,
+        "follow_up_done": False,
+        "age_questions_asked": 0,
+        "age_answers": [],
+    }
+    
+    # Initial welcome - only invoke ONCE
+    for event in app.stream(state):
+        if "welcome" in event:
+            state = event["welcome"]
+            print(f"\n🤖 Assistant: {state['current_response']}")
+            break
+    
     while True:
-        # Get user input
-        user_input = input("\n👤 You: ").strip()        
+        user_input = input("\n👤 You: ").strip()
+        
         if user_input.lower() in ['quit', 'exit', 'bye']:
             print("\n💙 Take care! Remember, you're not alone.")
             break
+            
         if not user_input:
             continue
+        
         # Update state with user input
         state["user_input"] = user_input
         state["conversation_history"].append({
             "role": "user",
             "content": user_input
         })
-        # Process through workflow
-        state = app.invoke(state)
-        # Check if evaluation is complete
-        if state.get("evaluation_complete"):
-            print("\n" + "-"*80)
-            print("EVALUATION SUMMARY:")
-            print(f"   Age: ~{state.get('estimated_age', 'Unknown')} years ({state.get('age_category', 'Unknown')})")
-            print(f"   Primary Concern: {state.get('primary_concern', 'Unknown')}")
-            print(f"   Assessment: {state.get('assessment_score', 0)}/10 urgency")
-            print("-"*80)
+        
+        # Stream through remaining nodes
+        for event in app.stream(state):
+            # Get the last node's output
+            node_name = list(event.keys())[0]
+            state = event[node_name]
+            
+            # Print only if there's a response
+            if state.get("current_response"):
+                print(f"\n🤖 Assistant: {state['current_response']}")
+        
+        # Check if we've reached the end
+        if state.get("follow_up_done") or state.get("final_guidance"):
             break
-
 # === TESTING ===
 def test_workflow():
     """Test with automated scenarios"""
