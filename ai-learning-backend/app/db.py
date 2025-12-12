@@ -9,7 +9,6 @@ from sqlalchemy.pool import StaticPool
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./auth_app.db")
-
 # SQLAlchemy setup
 engine = create_engine(
     DATABASE_URL,

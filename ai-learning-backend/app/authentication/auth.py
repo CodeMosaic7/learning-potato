@@ -30,8 +30,7 @@ def authenticate_user(db: Session, email: str, password: str) -> Union[User, boo
     user = db.query(User).filter(User.email == email).first()
     if not user:
         print(f"DEBUG: User not found: {email}")
-        return False
-        
+        return False        
     print(f"DEBUG: User found, checking password")
     if not verify_password(password, user.hashed_password):
         print(f"DEBUG: Password verification failed")
@@ -74,13 +73,10 @@ def run_if_authenticated(user: User):
     else:
         print("Access denied.")
 
-    
-
 async def get_current_user(request: Request, db=Depends(get_db)):
     token = request.cookies.get("access_token")
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
-
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")

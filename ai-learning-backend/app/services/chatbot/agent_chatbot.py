@@ -6,8 +6,6 @@ from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from typing import TypedDict, Literal
 from rate_limiter import llm_rate_limiter
-
-
 dotenv.load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 
@@ -55,8 +53,6 @@ llm = ChatGoogleGenerativeAI(
     limit_response_tokens=True,
     convert_system_message_to_human=True
 )
-
-
 # llm = ChatOpenAI(
 #     model="gpt-3.5-turbo",
 #     api_key=os.getenv("OPENAI_API_KEY"),
@@ -149,24 +145,18 @@ Evaluate and return ONLY a JSON object:
   ]
 }}
 """
-
     result = safe_invoke(prompt).content
-
-
     data = json.loads(result)
 
     state["estimated_age"] = data["estimated_age"]
     state["age_confidence"] = data["confidence"]
     state["age_category"] = data["category"]
     state["age_indicators"] = data["indicators"]
-
     state["age_assessment_complete"] = True
-
     state["current_response"] = (
         f"Thanks! I’ve finished understanding your thinking style. "
         f"Estimated intellectual age: {data['estimated_age']} ({data['category']})."
     )
-
     state["conversation_history"].append({
         "role": "assistant",
         "content": state["current_response"]
@@ -174,30 +164,24 @@ Evaluate and return ONLY a JSON object:
 
     return state
 
-
 # need to refine: use rag to pull in relevant knowledge
 def mental_state_assessor_node(state: State) -> State:
     """Assess mental and emotional state"""
     user_input = state.get("user_input", "")
     age_category = state.get("age_category", "adult")
-    estimated_age = state.get("estimated_age", 15)
-    
+    estimated_age = state.get("estimated_age", 15)    
     prompt = f"""As a mental health professional, assess this message from a {age_category} (approximately {estimated_age} years old):
-
 "{user_input}"
-
 Provide assessment in this format:
 1. Urgency Score: [1-10]
 2. Primary Concern: [anxiety/depression/stress/trauma/relationships/academic/family/general]
 3. Emotional State: [brief description]
 4. Risk Level: [low/medium/high]
 5. Needs Immediate Help: [yes/no]
-
 Consider age-appropriate concerns and expression styles."""
 
     response = safe_invoke(prompt)
-    assessment = response.content
-    
+    assessment = response.content   
     # Parse assessment
     lines = assessment.split('\n')
     for line in lines:
@@ -299,7 +283,6 @@ Make it warm, practical, and hopeful."""
         "role": "assistant",
         "content": guidance
     })
-    
     print(f"\nFinal Guidance:\n{guidance}")
     return state
 
@@ -317,8 +300,6 @@ Provide helpful, safe, supportive, and optionally informative guidance.
     state["conversation_history"].append({"role": "assistant", "content": response})
     return state
 
-
-
 def router_node(state: State):
     if not state["age_assessment_complete"]:
         return "age_question_generator"
@@ -334,9 +315,7 @@ def router_node(state: State):
 
     return "guidance"
 
-
 # === WORKFLOW ===
-
 workflow = StateGraph(State)
 
 # Add all nodes
@@ -390,9 +369,7 @@ workflow.add_edge("chat_service_node", "chat_service_node")
 app = workflow.compile()
 print(app)
 
-
 # === INTERACTIVE SESSION ===
-
 def run_interactive_session():
     """Run an interactive counseling session"""
     print("\n" + "="*80)
@@ -420,37 +397,29 @@ def run_interactive_session():
     "follow_up_done": False,
     "age_questions_asked": 0,
     "age_answers": [],
-}
-
-    
+}  
     # Start with welcome
-    state = app.invoke(state)
-    
+    state = app.invoke(state)    
     while True:
         # Get user input
-        user_input = input("\n👤 You: ").strip()
-        
+        user_input = input("\n👤 You: ").strip()        
         if user_input.lower() in ['quit', 'exit', 'bye']:
             print("\n💙 Take care! Remember, you're not alone.")
             break
-        
         if not user_input:
             continue
-        
         # Update state with user input
         state["user_input"] = user_input
         state["conversation_history"].append({
             "role": "user",
             "content": user_input
         })
-        
         # Process through workflow
         state = app.invoke(state)
-        
         # Check if evaluation is complete
         if state.get("evaluation_complete"):
             print("\n" + "-"*80)
-            print("📊 EVALUATION SUMMARY:")
+            print("EVALUATION SUMMARY:")
             print(f"   Age: ~{state.get('estimated_age', 'Unknown')} years ({state.get('age_category', 'Unknown')})")
             print(f"   Primary Concern: {state.get('primary_concern', 'Unknown')}")
             print(f"   Assessment: {state.get('assessment_score', 0)}/10 urgency")
@@ -458,7 +427,6 @@ def run_interactive_session():
             break
 
 # === TESTING ===
-
 def test_workflow():
     """Test with automated scenarios"""
     test_cases = [
@@ -483,13 +451,11 @@ def test_workflow():
                 "The stress is affecting my sleep and I'm having difficulty concentrating at work"
             ]
         }
-    ]
-    
+    ]   
     for test_case in test_cases:
         print("\n" + "="*80)
         print(f"TEST: {test_case['name']}")
-        print("="*80)
-        
+        print("="*80)        
         state = {
             "user_input": "",
             "conversation_history": [],
@@ -505,33 +471,26 @@ def test_workflow():
             "current_response": "",
             "needs_more_info": True,
             "final_guidance": ""
-        }
-        
+        }        
         # Welcome
         state = app.invoke(state)
-        
-        # Simulate
         # Simulate conversation
         for msg in test_case["messages"]:
             state["user_input"] = msg
             state["conversation_history"].append({"role": "user", "content": msg})
             print(f"\n👤 User: {msg}")
             state = app.invoke(state)
-            
             if state.get("evaluation_complete"):
-                break
-        
+                break        
         print("\n" + "="*80 + "\n")
 
 if __name__ == "__main__":
     if not api_key:
-        print("⚠️  ERROR: API KEY not found!")
+        print("ERROR: API KEY not found!")
         print("Please set your API key in .env file")
     else:
-        print("✅ API Key loaded\n")
-        
+        print("API Key loaded\n")
         mode = input("Choose mode:\n1. Interactive Session\n2. Run Tests\n\nEnter 1 or 2: ").strip()
-        
         if mode == "1":
             run_interactive_session()
         else:
