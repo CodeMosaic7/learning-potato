@@ -20,9 +20,10 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 # REGISTER
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 async def register_user(user: UserCreate, db=Depends(get_db)):
+    print("Received user data:", user.dict())
     users_collection = db["users"]
-    # check if user exists
-    existing_user = await users_collection.find_one({
+    # Check if user exists
+    existing_user = await users_collection.find_one({                                                                                               
         "$or": [
             {"email": user.email},
             {"username": user.username}
@@ -33,26 +34,34 @@ async def register_user(user: UserCreate, db=Depends(get_db)):
             raise HTTPException(status_code=400, detail="Email already registered")
         else:
             raise HTTPException(status_code=400, detail="Username already taken")
+    # Handle profile image
+    url = None
     if user.profile_image:
-        url=await upload_profile_image(image_data=user.profile_image,user_id=user.username)
-    else:
-        url=None
+        url = await upload_profile_image(image_data=user.profile_image, user_id=user.username)
     hashed_password = get_password_hash(user.password)
+    created_at = datetime.datetime.now()
     db_user = {
         "name": user.name,
         "username": user.username,
         "email": user.email,
         "password_hash": hashed_password,
         "date_of_birth": user.date_of_birth or "",
-        "gender": user.gender,
-        "grade_level": user.grade_level,
+        "gender": user.gender or "",
+        "grade_level": user.grade_level or "",
         "profile_image": url or "",
-        "created_at": datetime.datetime.now(),
+        "created_at": created_at,
     }
     result = await users_collection.insert_one(db_user)
     return UserOut(
         id=str(result.inserted_id),
-        **db_user
+        name=user.name,
+        username=user.username,
+        email=user.email,
+        date_of_birth=user.date_of_birth or "",
+        gender=user.gender or "",
+        grade_level=user.grade_level or "",
+        profile_image=url or "",
+        created_at=created_at
     )
 
 # LOGIN
@@ -74,7 +83,8 @@ async def login_user(login_data: UserLogin, response: Response, db=Depends(get_d
         samesite="None",
         secure=True
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    print("DEBUG: ACCEESS TOKEN:", access_token)
+    return Token(email=user["email"],access_token=access_token, token_type= "bearer")
 
 # USER INFO ENDPOINTS
 @router.get("/me", response_model=UserResponse)

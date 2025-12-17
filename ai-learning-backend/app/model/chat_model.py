@@ -1,7 +1,28 @@
 from pydantic import BaseModel
 from datetime import datetime
+import datetime
 from typing import Optional
 from base import MongoModel, PyObjectId
+
+
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+
+    stage = Column(String, default="welcome")
+    current_question = Column(Integer, default=0)
+    responses = Column(JSON, default=list)
+    conversation_history = Column(JSON, default=list)
+
+    mental_age = Column(Integer, nullable=True)
+    intellect_level = Column(String, nullable=True)
+
+    completed = Column(Boolean, default=False)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
 
 class ChatSessionBase(BaseModel):
     estimated_age: Optional[int] = None

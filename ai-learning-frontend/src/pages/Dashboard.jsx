@@ -6,7 +6,16 @@ import {
 } from "lucide-react";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
-
+import {
+  getDashboardOverview,
+  getUserProfile,
+  createUserProfile,
+  updateUserProfile,
+  getLearningInsights,
+  getLearningProgress,
+  getRecentActivity,
+  getWeeklyStats
+} from '../api/api.js'
 const Dashboard = () => {
   const [userData, setUserData] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
@@ -15,70 +24,71 @@ const Dashboard = () => {
   const [quizTopic, setQuizTopic] = useState('');
   const [quizDifficulty, setQuizDifficulty] = useState('Easy');
 
+  const [profile, setProfile] = useState(null);
+  const [insights, setInsights] = useState(null);
+  const [progress, setProgress] = useState(null);
+  const [recentActivity, setRecentActivity] = useState(null);
+  const [weeklyStats, setWeeklyStats] = useState(null);
+  
+  const [error, setError] = useState(null);
+
+  const getToken = () => localStorage.getItem("access_token");
+
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
   const fetchDashboardData = async () => {
-    try {
-      const mockData = {
-        username: "Alex",
-        user: {
-          mental_age: 12,
-          intellect_level: "Advanced",
-          assessment_progress: "75%"
-        },
-        quiz_stats: {
-          completed_quizzes: 15,
-          average_score: 87,
-          recent_scores: [92, 88, 95, 85, 90]
-        },
-        learning_streak: 7,
-        homework_stats: {
-          completed_homework: 12,
-          pending_homework: 3,
-          submission_rate: 80
-        },
-        badges_earned: ["Quick Learner", "Perfect Score", "Week Warrior", "Math Master"],
-        recent_activities: [
-          {
-            type: "quiz",
-            description: "Completed Science Quiz",
-            timestamp: "2 hours ago",
-            points: 50
-          },
-          {
-            type: "homework",
-            description: "Submitted Math Homework",
-            timestamp: "5 hours ago",
-            points: 30
-          },
-          {
-            type: "badge",
-            description: "Earned 'Week Warrior' Badge",
-            timestamp: "1 day ago",
-            points: 100
-          },
-          {
-            type: "assessment",
-            description: "Completed Assessment Module",
-            timestamp: "2 days ago",
-            points: 75
-          }
-        ]
-      };
+  try {
+    setLoading(true);
+    setError(null);
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setDashboardData(mockData);
-      setUserData(mockData.user);
-      setUserName(mockData.username);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      setLoading(false);
+    const token = getToken();
+    if (!token) {
+      throw new Error("User not authenticated");
     }
-  };
+
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
+
+    // Fetch in parallel
+    const [
+      profileRes,
+      overviewRes,
+      insightsRes,
+      progressRes,
+      activityRes,
+      weeklyRes
+    ] = await Promise.all([
+      getUserProfile(headers),
+      getDashboardOverview(headers),
+      getLearningInsights(headers),
+      getLearningProgress(headers),
+      getRecentActivity(headers),
+      getWeeklyStats(headers),
+    ]);
+
+    // Store states
+    setProfile(profileRes.data);
+    setDashboardData(overviewRes.data);
+    setInsights(insightsRes.data);
+    setProgress(progressRes.data);
+    setRecentActivity(activityRes.data);
+    setWeeklyStats(weeklyRes.data);
+
+    // Derived data
+    setUserData(profileRes.data);
+    setUserName(profileRes.data?.name || "User");
+
+  } catch (err) {
+    console.error("Dashboard fetch failed:", err);
+    setError(err.response?.data?.detail || err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const getIntellectLevelColor = (level) => {
     const colors = {
@@ -120,6 +130,22 @@ const Dashboard = () => {
       </div>
     );
   }
+  if (error) {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-black text-white">
+      <div className="text-center">
+        <p className="text-red-400 mb-4">⚠ {error}</p>
+        <button
+          onClick={fetchDashboardData}
+          className="px-6 py-3 bg-purple-600 rounded-xl"
+        >
+          Retry
+        </button>
+      </div>
+    </div>
+  );
+}
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white">

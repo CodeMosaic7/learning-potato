@@ -1,4 +1,3 @@
-# Entry point
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,9 +6,10 @@ from app.dependencies import get_db
 from app.db import engine
 from app.models import Base, User  
 from app.authentication.routes import router as auth_router
-from app.router.chatbot import router as chatbot_router
+# from app.router.chatbot import router as chatbot_router
 from app.router.quiz import router as quiz_router
 from app.router.homework import router as hw_router
+from app.router.dashboard import router as dashboard_router
 from app.mongo_db import connect_mongo_db, close_mongo_db
 import os
 
@@ -49,6 +49,7 @@ def read_users(db: Session = Depends(get_db)):
 
 # routers
 app.include_router(auth_router)
-app.include_router(chatbot_router)
+# app.include_router(chatbot_router)
 app.include_router(quiz_router)
 app.include_router(hw_router)
+app.include_router(dashboard_router)

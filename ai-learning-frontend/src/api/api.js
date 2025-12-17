@@ -1,13 +1,25 @@
 import API from './config';
-
 // Auth APIs
-export async function registerUser(email, username, full_name, password) {
+export async function registerUser(email, username, full_name, password, date_of_birth, gender, grade_level, profile_image) {
   try {
+    let imageBase64 = null;
+    if (profile_image && profile_image instanceof File) {
+      imageBase64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(profile_image);
+      });
+    }
     const res = await API.post('/auth/register', {
-      full_name,
+      name: full_name,
       username,
       email,
-      password
+      password,
+      date_of_birth: date_of_birth || "",
+      gender: gender || "",
+      grade_level: grade_level || "",
+      profile_image: imageBase64 || "",
     });
     return res.data;
   } catch (error) {
@@ -30,8 +42,10 @@ export const loginUser = async (email,password) => {
         },
       });
       console.log('Login successful:');
+      console.log(response.data);
       // user=getCurrentUser(response.data.access_token);
       // console.log(user) // Fetch user profile after login
+      localStorage.setItem('access_token', response.access_token);
       return {success: true,};
     } catch (error) {
       console.error('Login failed:');
@@ -213,5 +227,213 @@ export async function getChatbotStatus(sessionId) {
   } catch (error) {
     console.error('Get status error:', error);
     throw new Error(error.response?.data?.detail || `Status Check Error: ${error.message}`);
+  }
+}
+// Dashboard APIs
+// Get dashboard overview
+export async function getDashboardOverview(token) {
+  try {
+    const res = await API.get('/dashboard/', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Dashboard overview error:', error);
+    throw new Error(error.response?.data?.detail || 'Failed to fetch dashboard overview');
+  }
+}
+
+// Get user profile
+export async function getUserProfile(token) {
+  try {
+    const res = await API.get('/dashboard/profile', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Get profile error:', error);
+    throw new Error(error.response?.data?.detail || 'Failed to fetch user profile');
+  }
+}
+
+// Create user profile
+export async function createUserProfile(token, profileData) {
+  try {
+    const res = await API.post('/dashboard/profile', {
+      user_id: profileData.user_id,
+      bio: profileData.bio || null,
+      location: profileData.location || null,
+      interests: profileData.interests || [],
+      learning_goals: profileData.learning_goals || [],
+      preferred_learning_style: profileData.preferred_learning_style || null,
+      intellectual_level: profileData.intellectual_level || null,
+      emotional_state: profileData.emotional_state || null,
+      strengths: profileData.strengths || [],
+      weaknesses: profileData.weaknesses || [],
+      learning_style: profileData.learning_style || null,
+      recommended_subjects: profileData.recommended_subjects || []
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Create profile error:', error);
+    throw new Error(error.response?.data?.detail || 'Failed to create user profile');
+  }
+}
+
+// Update user profile
+export async function updateUserProfile(token, profileData) {
+  try {
+    const res = await API.put('/dashboard/profile', {
+      user_id: profileData.user_id,
+      bio: profileData.bio || null,
+      location: profileData.location || null,
+      interests: profileData.interests || [],
+      learning_goals: profileData.learning_goals || [],
+      preferred_learning_style: profileData.preferred_learning_style || null,
+      intellectual_level: profileData.intellectual_level || null,
+      emotional_state: profileData.emotional_state || null,
+      strengths: profileData.strengths || [],
+      weaknesses: profileData.weaknesses || [],
+      learning_style: profileData.learning_style || null,
+      recommended_subjects: profileData.recommended_subjects || []
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Update profile error:', error);
+    throw new Error(error.response?.data?.detail || 'Failed to update user profile');
+  }
+}
+
+// Delete user profile
+export async function deleteUserProfile(token) {
+  try {
+    const res = await API.delete('/dashboard/profile', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Delete profile error:', error);
+    throw new Error(error.response?.data?.detail || 'Failed to delete user profile');
+  }
+}
+
+// Get learning insights
+export async function getLearningInsights(token) {
+  try {
+    const res = await API.get('/dashboard/learning-insights', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Get learning insights error:', error);
+    throw new Error(error.response?.data?.detail || 'Failed to fetch learning insights');
+  }
+}
+
+// Get learning progress
+export async function getLearningProgress(token) {
+  try {
+    const res = await API.get('/dashboard/progress', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Get progress error:', error);
+    throw new Error(error.response?.data?.detail || 'Failed to fetch learning progress');
+  }
+}
+
+// Get recent activity
+export async function getRecentActivity(token, limit = 10) {
+  try {
+    const res = await API.get(`/dashboard/recent-activity?limit=${limit}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Get recent activity error:', error);
+    throw new Error(error.response?.data?.detail || 'Failed to fetch recent activity');
+  }
+}
+
+// Get weekly stats
+export async function getWeeklyStats(token) {
+  try {
+    const res = await API.get('/dashboard/stats/weekly', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Get weekly stats error:', error);
+    throw new Error(error.response?.data?.detail || 'Failed to fetch weekly statistics');
+  }
+}
+
+// Get user courses
+export async function getUserCourses(token) {
+  try {
+    const res = await API.get('/dashboard/courses', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Get user courses error:', error);
+    throw new Error(error.response?.data?.detail || 'Failed to fetch user courses');
+  }
+}
+
+// Get user achievements
+export async function getUserAchievements(token) {
+  try {
+    const res = await API.get('/dashboard/achievements', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Get achievements error:', error);
+    throw new Error(error.response?.data?.detail || 'Failed to fetch achievements');
+  }
+}
+
+// Get course recommendations
+export async function getCourseRecommendations(token) {
+  try {
+    const res = await API.get('/dashboard/recommendations', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Get recommendations error:', error);
+    throw new Error(error.response?.data?.detail || 'Failed to fetch recommendations');
   }
 }
