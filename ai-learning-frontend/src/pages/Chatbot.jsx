@@ -21,9 +21,7 @@ const Chatbot = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState(null);
 
-  // -----------------------------
   // INITIAL AUTH + CHAT SETUP
-  // -----------------------------
   useEffect(() => {
     const storedUserData = sessionStorage.getItem("user_data");
 

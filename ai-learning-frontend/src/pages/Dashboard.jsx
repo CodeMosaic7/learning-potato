@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Brain, TrendingUp, Sparkles, Trophy, MessageSquare,
   BarChart3, BookOpen, ChevronRight, Award, Flame,
@@ -17,23 +18,22 @@ import {
   getWeeklyStats
 } from '../api/api.js'
 const Dashboard = () => {
+  const navigator=useNavigate()
   const [userData, setUserData] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
   const [quizTopic, setQuizTopic] = useState('');
   const [quizDifficulty, setQuizDifficulty] = useState('Easy');
-
   const [profile, setProfile] = useState(null);
   const [insights, setInsights] = useState(null);
   const [progress, setProgress] = useState(null);
   const [recentActivity, setRecentActivity] = useState(null);
   const [weeklyStats, setWeeklyStats] = useState(null);
-  
   const [error, setError] = useState(null);
 
   const getToken = () => localStorage.getItem("access_token");
-
+  
 
   useEffect(() => {
     fetchDashboardData();
@@ -62,7 +62,7 @@ const Dashboard = () => {
       activityRes,
       weeklyRes
     ] = await Promise.all([
-      getUserProfile(headers),
+      // getUserProfile(headers),
       getDashboardOverview(headers),
       getLearningInsights(headers),
       getLearningProgress(headers),
@@ -76,9 +76,7 @@ const Dashboard = () => {
     setInsights(insightsRes.data);
     setProgress(progressRes.data);
     setRecentActivity(activityRes.data);
-    setWeeklyStats(weeklyRes.data);
-
-    // Derived data
+    // setWeeklyStats(weeklyRes.data);
     setUserData(profileRes.data);
     setUserName(profileRes.data?.name || "User");
 
@@ -145,8 +143,6 @@ const Dashboard = () => {
     </div>
   );
 }
-
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white">
       <div className="container mx-auto px-6 py-8 space-y-6 max-w-7xl">   
@@ -170,7 +166,6 @@ const Dashboard = () => {
             )}
           </div>
         </div>
-
         {/* Key Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-sm border border-purple-500/30 rounded-2xl p-6 hover:border-purple-400/50 transition-all hover:scale-105">
@@ -199,7 +194,6 @@ const Dashboard = () => {
             <Award className="w-6 h-6 text-purple-400" />
           </div>
         </div>
-
         {/* Assessment Progress */}
         {userData?.assessment_progress !== 'completed' && (
           <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 backdrop-blur-sm border border-blue-500/30 rounded-2xl p-6 hover:border-blue-400/50 transition-all">
@@ -213,7 +207,7 @@ const Dashboard = () => {
                 <p className="text-sm text-blue-300">Progress: {userData?.assessment_progress || '0%'}</p>
               </div>
               <button 
-                onClick={() => alert('Navigating to assessment...')}
+                onClick={() => navigator("../chatbot")}
                 className="bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2"
               >
                 {userData?.assessment_progress ? 'Continue' : 'Start Now'} 
@@ -222,7 +216,6 @@ const Dashboard = () => {
             </div>
           </div>
         )}
-
         {/* Homework Section */}
         {dashboardData?.homework_stats.pending_homework > 0 && (
           <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-sm border border-purple-500/30 rounded-2xl p-6 hover:border-purple-400/50 transition-all">
@@ -242,7 +235,7 @@ const Dashboard = () => {
                 <p className="text-sm text-slate-400">Submission Rate: {dashboardData.homework_stats.submission_rate}%</p>
               </div>
               <button 
-                onClick={() => alert('Navigating to homework...')}
+                onClick={() => navigator("../HomeWorkHelper")}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-purple-500 hover:to-pink-500 transition-colors flex items-center gap-2"
               >
                 View All 
@@ -251,7 +244,6 @@ const Dashboard = () => {
             </div>
           </div>
         )}
-
         {/* Quiz Generator & Recent Scores */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Quiz Generator */}
@@ -280,7 +272,7 @@ const Dashboard = () => {
                   <option>Hard</option>
                 </select>
                 <button 
-                  onClick={handleGenerateQuiz}
+                  onClick={()=>{navigator("../Quiz")}}
                   className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-purple-500 hover:to-pink-500 transition-all"
                 >
                   Generate Quiz
@@ -288,7 +280,6 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-
           {/* Recent Scores */}
           <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-sm border border-purple-500/30 rounded-2xl p-7 hover:border-purple-400/50 transition-all">
             <h3 className="text-xl font-semibold mb-5 flex items-center gap-2 text-white">
@@ -319,7 +310,6 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-
         {/* Badges & Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Badges */}
@@ -343,7 +333,6 @@ const Dashboard = () => {
               )}
             </div>
           </div>
-
           {/* Recent Activity */}
           <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-sm border border-purple-500/30 rounded-2xl p-7 hover:border-purple-400/50 transition-all">
             <h3 className="text-xl font-semibold mb-5 flex items-center gap-2 text-white">
@@ -376,7 +365,6 @@ const Dashboard = () => {
             </ul>
           </div>
         </div>
-
         {/* Homework Help Section */}
         <div className="bg-gradient-to-r from-green-500/10 to-teal-500/10 backdrop-blur-sm border border-green-500/30 rounded-2xl p-7 hover:border-green-400/50 transition-all">
           <h3 className="text-xl font-semibold mb-2 flex items-center gap-2 text-white">
@@ -387,7 +375,7 @@ const Dashboard = () => {
           <div className="flex flex-wrap gap-3">
             <button 
               className="flex-1 min-w-[200px] bg-white text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition-colors flex items-center justify-center gap-2"
-              onClick={() => alert('Upload homework feature coming soon!')}
+              onClick={() => navigator("../HomeWorkHelper")}
             >
               <MessageSquare className="w-5 h-5" />
               Ask AI Tutor
