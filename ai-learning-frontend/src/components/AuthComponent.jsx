@@ -58,7 +58,6 @@ const AuthComponent = () => {
         .then((response) => {
           if (response.success) {
             setTimeout(() => {
-              alert('Login successful!');
               setIsLoading(false);
               navigate('/dashboard');
             }, 1500);
