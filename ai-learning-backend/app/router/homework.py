@@ -36,10 +36,8 @@ async def handle_homework(file: UploadFile = File(...)):
                 detail="Uploaded file appears to be empty"
             )
         
-        # Process the homework image (extract text and generate solution)
         extracted_text_and_solution = await process_homework_image(file_bytes)
         
-        # Validate response from text extraction
         if not extracted_text_and_solution:
             raise HTTPException(
                 status_code=422,

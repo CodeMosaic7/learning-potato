@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import Dict, Any, List
+from typing import Dict, Any
 from datetime import datetime, timedelta
 from bson import ObjectId
 from app.dependencies import get_db
@@ -59,19 +59,21 @@ async def get_dashboard_overview(
         }
     }
 
-
 @router.get("/profile", response_model=UserProfileOut)
 async def get_user_profile(
     current_user: dict = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    """
-    Get user's learning profile
-    """
+    """Get user's learning profile"""
     user_id = ObjectId(current_user["_id"])
+    print(user_id)
     profiles_collection = db["user_profiles"]
     
     profile = await profiles_collection.find_one({"user_id": user_id})
+    # return empty userProfileOut
+    if not profile:
+        return 
+
     
     if not profile:
         raise HTTPException(
@@ -81,6 +83,8 @@ async def get_user_profile(
     # Convert MongoDB document to Pydantic model
     profile["id"] = str(profile.pop("_id"))
     profile["user_id"] = str(profile["user_id"])
+
+    
     
     return UserProfileOut(**profile)
 

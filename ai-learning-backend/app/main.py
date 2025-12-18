@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,7 +12,6 @@ from app.router.quiz import router as quiz_router
 from app.router.homework import router as hw_router
 from app.router.dashboard import router as dashboard_router
 from app.mongo_db import connect_mongo_db, close_mongo_db
-import os
 
 Base.metadata.create_all(bind=engine)
 
@@ -26,8 +26,10 @@ app.add_middleware(
     allow_headers=["*"],
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 )
+
 @app.on_event("startup")
 async def startup_event():
+    global client,db
     client,db=connect_mongo_db()
 
 @app.on_event("shutdown")
