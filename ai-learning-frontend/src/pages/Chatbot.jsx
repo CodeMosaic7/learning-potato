@@ -73,9 +73,7 @@ const Chatbot = () => {
     }
   };
 
-  // -----------------------------
   // SEND MESSAGE
-  // -----------------------------
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
 
@@ -125,9 +123,7 @@ const Chatbot = () => {
     navigate("/");
   };
 
-  // -----------------------------
   // LOADING SCREEN
-  // -----------------------------
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#080C1A] via-[#0F0A21] to-[#080C1A] flex items-center justify-center">
@@ -139,9 +135,7 @@ const Chatbot = () => {
     );
   }
 
-  // -----------------------------
   // MAIN CHAT UI (UPDATED)
-  // -----------------------------
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#080C1A] via-[#0F0A21] to-[#080C1A] text-white flex flex-col">
 

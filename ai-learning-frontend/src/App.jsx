@@ -7,6 +7,7 @@ import Chatbot from './pages/Chatbot.jsx';
 import AuthComponent from './components/AuthComponent.jsx';
 import HomeWorkHelper from './pages/HomeWorkHelper.jsx';
 import Quiz from './pages/Quiz.jsx';
+import Roadmap from './pages/Roadmap.jsx'
 function App() {
   return (
     <BrowserRouter>
@@ -17,6 +18,7 @@ function App() {
         <Route path="/chatbot" element={<Chatbot/>} />
         <Route path="/HomeWorkHelper" element={<HomeWorkHelper/>} />
         <Route path="/Quiz" element={<Quiz/>} />
+        <Route path="/Roadmap" element={<Roadmap/>}/>
       </Routes>
     </BrowserRouter>
   );

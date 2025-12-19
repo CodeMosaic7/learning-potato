@@ -6,7 +6,7 @@ import Footer from '../components/Footer';
 
 const Home = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const navigate=useNavigate();
+  const navigate = useNavigate();
   // Set isVisible to true on component mount to trigger animations
   useEffect(() => {
     setIsVisible(true);
@@ -35,10 +35,18 @@ const Home = () => {
       icon: <Target className="w-8 h-8" />,
       title: "Progress Tracking",
       description: "Comprehensive analytics to monitor your learning journey and achievements.",
-      path: "/Dashboard"
+      path: "/Roadmap"
     }
   ];
 
+  const handleStartLearning=()=>{
+    const token=localStorage.getItem("token");
+    if (token){
+      navigate("./dashboard")
+    } else {
+      navigate("./login")
+    }
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white overflow-hidden">
     
@@ -47,13 +55,11 @@ const Home = () => {
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute top-3/4 right-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
         <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl animate-pulse" style={{animationDelay: '2s'}}></div>
-      </div>
-      
+      </div>      
       {/* Navigation */}
       <Header />
-
       {/* Hero Section */}
-      <section className="relative z-10 container mx-auto px-6 py-20">
+      <section className="h-screen relative z-10 container mx-auto px-6 py-20">
         <div className={`text-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <div className="inline-flex items-center space-x-2 bg-purple-500/20 backdrop-blur-sm border border-purple-500/30 rounded-full px-4 py-2 mb-8">
             <Zap className="w-4 h-4 text-yellow-400" />
@@ -73,7 +79,7 @@ const Home = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button className="group bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-purple-500/50 flex items-center space-x-2">
+            <button onClick={handleStartLearning} className="group bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-purple-500/50 flex items-center space-x-2">
               <PlayCircle className="w-6 h-6 group-hover:animate-bounce" />
               <span>Start Learning</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -83,7 +89,7 @@ const Home = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="relative z-10 container mx-auto px-6 py-20">
+      <section id="features" className="h-screen relative z-10 container mx-auto px-6 py-20">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             Exclusive Features
@@ -118,7 +124,6 @@ const Home = () => {
           ))}
         </div>
       </section>
-
       {/* Footer */}
       <Footer/>
     
