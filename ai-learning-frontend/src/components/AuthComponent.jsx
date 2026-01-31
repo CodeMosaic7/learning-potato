@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Brain, Zap, Upload, X } from "lucide-react";
-import { registerUser, loginUser } from "../api/api"; 
+import { registerUser, loginUser, Userdetails } from "../api/api";
 import { useNavigate } from "react-router-dom";
 
 const AuthComponent = () => {
@@ -18,23 +18,23 @@ const AuthComponent = () => {
   });
   const [imagePreview, setImagePreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    
+
     if (file) {
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!validTypes.includes(file.type)) {
         alert('Please select a valid image file (JPG, PNG, GIF, or WebP)');
         return;
       }
-      
+
       const maxSize = 5 * 1024 * 1024;
       if (file.size > maxSize) {
         alert('Image size should be less than 5MB');
         return;
       }
-      
+
       setFormData({ ...formData, profile_image: file });
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -43,69 +43,76 @@ const AuthComponent = () => {
       reader.readAsDataURL(file);
     }
   };
-  
+
   const removeImage = () => {
     setFormData({ ...formData, profile_image: null });
     setImagePreview(null);
   };
-  
-  const handleSubmit = (e) => {
+
+const setUserData = async () => {
+    try {
+      const response = await Userdetails();
+      if (response) {
+        console.log(response);
+        setFormData({ ...formData, ...response.data });
+        localStorage.setItem("user_details", JSON.stringify(response));
+      } else {
+        throw new Error('Failed to fetch user data');
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      throw error;
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
-    if (isLogin) {
-      loginUser(formData.email, formData.password)
-        .then((response) => {
-          if (response.success) {
-            setTimeout(() => {
-              setIsLoading(false);
-              navigate('/dashboard');
-            }, 1500);
+    try {
+      if (isLogin) {
+        // Login flow
+        const loginResponse = await loginUser(formData.email, formData.password);
+        if (loginResponse.success) {
+          await setUserData();
+          navigate("/dashboard");
+        } else {
+          throw new Error('Login failed');
+        }
+      } else {
+        // Registration flow
+        const registerResponse = await registerUser(
+          formData.email,
+          formData.username,
+          formData.full_name,
+          formData.password,
+          formData.date_of_birth,
+          formData.gender,
+          formData.grade_level,
+          formData.profile_image
+        );
+
+        if (registerResponse.success) {
+          // Auto-login after successful registration
+          const loginResponse = await loginUser(formData.email, formData.password);
+          if (loginResponse.success) {
+            const user_details=await setUserData();
+            localStorage.setItem("user_details",JSON.stringify(user_details));
+            alert('Registration successful!');
+            navigate('/dashboard');
           } else {
-            alert('Login failed. Please check your credentials.');
-            setIsLoading(false);
+            alert('Registration successful! Please login manually.');
+            setIsLogin(true);
           }
-        })
-        .catch((error) => {
-          console.error('Login error:', error);
-          alert('An error occurred during login.');
-          setIsLoading(false);
-        });
-    } else {
-      registerUser(
-        formData.email, 
-        formData.username, 
-        formData.full_name, 
-        formData.password,
-        formData.date_of_birth,
-        formData.gender,
-        formData.grade_level,
-        formData.profile_image
-      )
-        .then((response) => {
-          if (response.success) {
-            return loginUser(formData.email, formData.password);
-          } else {
-            throw new Error('Registration failed');
-          }
-        })
-        .then((response) => {
-          if (response.success) {
-            setTimeout(() => {
-              alert('Registration successful!');
-              setIsLoading(false);
-              navigate('/dashboard');
-            }, 1500);
-          } else {
-            alert('Auto-login failed. Please login manually.');
-            setIsLoading(false);
-          }
-        })
-        .catch((error) => {
-          console.error('Registration error:', error);
-          alert('An error occurred during registration.');
-          setIsLoading(false);
-        });
+        } else {
+          throw new Error('Registration failed');
+        }
+      }
+    } catch (error) {
+      console.error('Authentication error:', error);
+      alert(isLogin ? 'Login failed. Please check your credentials.' : 'Registration failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -124,7 +131,7 @@ const AuthComponent = () => {
           </p>
         </div>
 
-        <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {!isLogin && (
             <>
               {/* Profile Image Upload */}
@@ -135,9 +142,9 @@ const AuthComponent = () => {
                 <div className="flex flex-col items-center gap-4">
                   {imagePreview ? (
                     <div className="relative">
-                      <img 
-                        src={imagePreview} 
-                        alt="Profile preview" 
+                      <img
+                        src={imagePreview}
+                        alt="Profile preview"
                         className="w-32 h-32 rounded-full object-cover border-4 border-purple-500"
                       />
                       <button
@@ -181,7 +188,7 @@ const AuthComponent = () => {
                   required={!isLogin}
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Username
@@ -197,7 +204,7 @@ const AuthComponent = () => {
                   required={!isLogin}
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Date of Birth
@@ -211,7 +218,7 @@ const AuthComponent = () => {
                   className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Gender
@@ -230,7 +237,7 @@ const AuthComponent = () => {
                   <option value="prefer_not_to_say">Prefer not to say</option>
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Grade Level
@@ -281,7 +288,7 @@ const AuthComponent = () => {
           </div>
 
           <button
-            onClick={handleSubmit}
+            type="submit"
             className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isLoading}
           >
@@ -297,7 +304,7 @@ const AuthComponent = () => {
               </>
             )}
           </button>
-        </div>
+        </form>
 
         <div className="mt-8 text-center">
           <button

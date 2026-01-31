@@ -29,8 +29,8 @@ class UserLogin(BaseModel):
 
 class Token(MongoModel):
     email:str
-    access_token: str
-    token_type: str
+    # access_token: str
+    # token_type: str
     # refresh_token
         
 

@@ -17,7 +17,7 @@ cloudinary.config(
 
 async def upload_profile_image(
     file: UploadFile = File(...),
-    user_id: str = None,
+    user_id= None,
     db=Depends(get_db)
 ):
     if not user_id:

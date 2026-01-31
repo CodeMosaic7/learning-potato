@@ -30,6 +30,7 @@ class State(TypedDict):
     age_indicators: list  
 
     age_questions_asked: int
+    # age_questions_answered: int
     age_answers: list
         
     # Mental state fields
@@ -60,10 +61,10 @@ def welcome_node(state: State) -> State:
     if state.get("conversation_history"):
         return state
     state["conversation_history"] = [{"role": "assistant", "content": welcome_msg}]
-    print("DEBUG:",state["conversation_history"])
+    # print("DEBUG:",state["conversation_history"])
     state["needs_more_info"] = True
     state["age_indicators"] = []
-    print("DEBUG 1: Starting new session.")
+    # print("DEBUG 1: Starting new session.")
     print(f"\n🤖 Assistant: {welcome_msg}")
     return state
 
@@ -359,7 +360,7 @@ memory = MemorySaver()
 app = workflow.compile()
 print(app)
 
-# === INTERACTIVE SESSION ===
+# INTERACTIVE SESSION
 def run_interactive_session():
     print("\n" + "="*80)
     print("🏥 Mental Health Counseling Chatbot - Interactive Mode")
@@ -416,8 +417,6 @@ def run_interactive_session():
             # Get the last node's output
             node_name = list(event.keys())[0]
             state = event[node_name]
-            
-            # Print only if there's a response
             if state.get("current_response"):
                 print(f"\n🤖 Assistant: {state['current_response']}")
         
@@ -486,15 +485,48 @@ def test_workflow():
                 break        
         print("\n" + "="*80 + "\n")
 
-if __name__ == "__main__":
-    if not api_key:
-        print("ERROR: API KEY not found!")
-        print("Please set your API key in .env file")
+# if __name__ == "__main__":
+#     if not api_key:
+#         print("ERROR: API KEY not found!")
+#         print("Please set your API key in .env file")
+#     else:
+#         print("API Key loaded\n")
+#         mode = input("Choose mode:\n1. Interactive Session\n2. Run Tests\n\nEnter 1 or 2: ").strip()
+#         if mode == "1":
+#             run_interactive_session()
+#         else:
+#             test_workflow()
+def getState(db):
+    """Either gets the state stored in database or initializes a new state."""
+    if db:
+        state = db.get("state", {})
     else:
-        print("API Key loaded\n")
-        mode = input("Choose mode:\n1. Interactive Session\n2. Run Tests\n\nEnter 1 or 2: ").strip()
-        if mode == "1":
-            run_interactive_session()
-        else:
-            test_workflow()
+        state = {
+            "user_input": "",
+            "conversation_history": [],
+        "evaluation_complete": False,
+        "estimated_age": 0,
+        "age_category": "",
+        "age_confidence": 0,
+        "age_indicators": [],
+        "assessment_score": 0,
+        "primary_concern": "",
+        "emotional_state": "",
+        "risk_level": "",
+        "current_response": "",
+        "needs_more_info": True,
+        "final_guidance": "",
+        "age_questions_asked": 0,
+        "age_answers": [],
+        "router_flag": "",
+        "age_router_flag": ""
+    }
+    return state
+
+
+def run_graph(state):
+    # Runs the workflow
+    final_state = app.invoke(state)
+    return final_state
+
     

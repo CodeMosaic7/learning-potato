@@ -1,5 +1,5 @@
 import API from './config';
-// Auth APIs
+
 export async function registerUser(email, username, full_name, password, date_of_birth, gender, grade_level, profile_image) {
   try {
     let imageBase64 = null;
@@ -36,10 +36,6 @@ export const loginUser = async (email,password) => {
       const response = await API.post('/auth/login', {
         email,
         password
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
       });
       console.log('Login successful:');
       console.log(response.data);
@@ -66,13 +62,10 @@ export async function logoutUser(){
   }
 }
 
-export async function Userdetails(token){
+export async function Userdetails(){
   try{
-    const res= await API.get('/auth/me',{
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    const res= await API.get('auth/me');
+    console.log("User Details:", res.data);
     return res.data;
   }
   catch(error){
@@ -83,11 +76,7 @@ export async function Userdetails(token){
 export async function getCurrentUser(token) {
   console.log("Using token:", token);
   try {
-    const res = await API.get('/auth/me', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    const res = await API.get('/auth/me');
     return res.data;
   } catch (error) {
     throw new Error("Not authenticated");

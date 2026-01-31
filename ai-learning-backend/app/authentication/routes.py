@@ -20,7 +20,6 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 # REGISTER
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 async def register_user(user: UserCreate, db=Depends(get_db)):
-    print("Received user data:", user.dict())
     users_collection = db["users"]
     # Check if user exists
     existing_user = await users_collection.find_one({                                                                                               
@@ -80,15 +79,18 @@ async def login_user(login_data: UserLogin, response: Response, db=Depends(get_d
         value=access_token,
         httponly=True,
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        samesite="None",
-        secure=True
+        samesite="none",
+        secure=True #True in prod
     )
-    print("DEBUG: ACCEESS TOKEN:", access_token)
-    return Token(email=user["email"],access_token=access_token, token_type= "bearer")
+    print("DEBUG: ACCESS TOKEN:", access_token)
+    return Token(email=user["email"])
 
-# USER INFO ENDPOINTS
+
 @router.get("/me", response_model=UserResponse)
-async def read_users_me(current_user=Depends(get_current_user)):
+async def read_user_me(
+    current_user: UserResponse = Depends(get_current_user)
+):
+    print("DEBUG: Current User:", current_user)
     return current_user
 
 @router.get("/user-details", response_model=UserResponse)

@@ -1,13 +1,15 @@
 import { useState, useRef } from 'react';
-import { Send, BookOpen, Camera, User, Bot, Star, Clock, Brain, AlertCircle } from 'lucide-react';
+import { Send, Camera, User, Bot, Star, Clock, Brain, AlertCircle } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { uploadHomeworkImage } from '../api/api'; 
+// import {getTextualHelp} from "../api/apis"
 const HomeWorkHelper = () => {
   const [messages, setMessages] = useState([
     {
       id: 1,
       sender: 'bot',
-      text: "Hi there! I'm your Homework helper. Upload a photo of your homework, textbook, or worksheet, and I'll help you understand and complete it step by step! 📚✨",
+      text: "Hi there! I'm your Homework helper. Upload a photo of your homework,of any subject, textbook, or worksheet, and I'll help you understand and complete it step by step! 📚✨",
       timestamp: new Date()
     }
   ]);
@@ -16,22 +18,15 @@ const HomeWorkHelper = () => {
   const [uploadError, setUploadError] = useState(null);
   const fileInputRef = useRef(null);
 
-  const subjects = [
-    { name: 'Mathematics', icon: '📐', color: 'from-blue-500/10 to-blue-600/10 border-blue-500/30 hover:border-blue-400/50' },
-    { name: 'Science', icon: '🧪', color: 'from-green-500/10 to-green-600/10 border-green-500/30 hover:border-green-400/50' },
-    { name: 'English', icon: '📖', color: 'from-purple-500/10 to-purple-600/10 border-purple-500/30 hover:border-purple-400/50' },
-    { name: 'History', icon: '📜', color: 'from-orange-500/10 to-orange-600/10 border-orange-500/30 hover:border-orange-400/50' },
-    { name: 'Geography', icon: '🌍', color: 'from-teal-500/10 to-teal-600/10 border-teal-500/30 hover:border-teal-400/50' },
-    { name: 'Other', icon: '🎓', color: 'from-pink-500/10 to-pink-600/10 border-pink-500/30 hover:border-pink-400/50' }
-  ];
-
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
-    if (!file) return;
+
+    if (file){
+      const text=uploadHomeworkImage(file)
+    }
 
     setIsLoading(true);
     setUploadError(null);
-
     try {
       const userMessage = {
         id: Date.now(),
@@ -41,10 +36,8 @@ const HomeWorkHelper = () => {
         timestamp: new Date()
       };
       setMessages(prev => [...prev, userMessage]);
-
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const aiResponse = {
+      const aiResponse = await {
         id: Date.now() + 1,
         sender: 'bot',
         text: "I can see this is a math problem involving quadratic equations. Let me help you solve this step by step.",
@@ -55,13 +48,6 @@ const HomeWorkHelper = () => {
         timestamp: new Date()
       };
       setMessages(prev => [...prev, aiResponse]);
-
-      const suggestionsMessage = {
-        id: Date.now() + 2,
-        sender: 'bot',
-        text: "Here's how we can approach this:\n\n1. First, let's identify the coefficients a, b, and c\n2. Then we'll use the quadratic formula\n3. Finally, we'll simplify the solution",
-        timestamp: new Date()
-      };
       setTimeout(() => {
         setMessages(prev => [...prev, suggestionsMessage]);
       }, 1000);
@@ -160,19 +146,6 @@ const HomeWorkHelper = () => {
             </button>
           </div>
         )}
-
-        {/* Subject Categories */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
-          {subjects.map((subject, index) => (
-            <div
-              key={index}
-              className={`bg-gradient-to-r ${subject.color} backdrop-blur-sm border rounded-xl p-3 text-center transition-all cursor-pointer hover:scale-105`}
-            >
-              <div className="text-2xl mb-1">{subject.icon}</div>
-              <div className="text-white text-xs font-medium">{subject.name}</div>
-            </div>
-          ))}
-        </div>
 
         {/* Chat Container */}
         <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-sm border border-purple-500/30 rounded-3xl overflow-hidden hover:border-purple-400/50 transition-all">

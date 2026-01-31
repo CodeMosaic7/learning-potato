@@ -7,7 +7,6 @@ from app.authentication.auth import get_current_user
 from app.model.user_profile_model import UserProfileCreate, UserProfileOut, UserProfileDB
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
-
 @router.get("/", response_model=Dict[str, Any])
 async def get_dashboard_overview(
     current_user: dict = Depends(get_current_user),
@@ -16,7 +15,7 @@ async def get_dashboard_overview(
     """
     Get dashboard overview with user stats and profile
     """
-    user_id = str(current_user["_id"])
+    user_id = str(current_user["id"])
 
     profiles_collection = db["user_profiles"]
     user_profile = await profiles_collection.find_one({"user_id": ObjectId(user_id)})
@@ -33,7 +32,6 @@ async def get_dashboard_overview(
         "user_id": ObjectId(user_id),
         "status": "in_progress"
     })
-    
     return {
         "message": f"Welcome back, {current_user['name']}!",
         "user": {
@@ -65,7 +63,7 @@ async def get_user_profile(
     db = Depends(get_db)
 ):
     """Get user's learning profile"""
-    user_id = ObjectId(current_user["_id"])
+    user_id = ObjectId(current_user["id"])
     print(user_id)
     profiles_collection = db["user_profiles"]
     
@@ -81,13 +79,9 @@ async def get_user_profile(
             detail="User profile not found. Please create a profile first."
         )
     # Convert MongoDB document to Pydantic model
-    profile["id"] = str(profile.pop("_id"))
-    profile["user_id"] = str(profile["user_id"])
-
-    
-    
+    profile["id"] = str(profile.pop("id"))
+    profile["user_id"] = str(profile["user_id"])    
     return UserProfileOut(**profile)
-
 
 @router.post("/profile", response_model=UserProfileOut, status_code=status.HTTP_201_CREATED)
 async def create_user_profile(
@@ -98,7 +92,7 @@ async def create_user_profile(
     """
     Create a new user learning profile
     """
-    user_id = ObjectId(current_user["_id"])
+    user_id = ObjectId(current_user["id"])
     profiles_collection = db["user_profiles"]
     
     # Check if profile already exists
@@ -125,14 +119,11 @@ async def create_user_profile(
         "recommended_subjects": profile_data.recommended_subjects,
         "updated_at": datetime.now()
     }
-    
     result = await profiles_collection.insert_one(profile_doc)
-    
     # Return created profile
-    created_profile = await profiles_collection.find_one({"_id": result.inserted_id})
-    created_profile["id"] = str(created_profile.pop("_id"))
+    created_profile = await profiles_collection.find_one({"id": result.inserted_id})
+    created_profile["id"] = str(created_profile.pop("id"))
     created_profile["user_id"] = str(created_profile["user_id"])
-    
     return UserProfileOut(**created_profile)
 
 
@@ -145,7 +136,7 @@ async def update_user_profile(
     """
     Update user's learning profile
     """
-    user_id = ObjectId(current_user["_id"])
+    user_id = ObjectId(current_user["id"])
     profiles_collection = db["user_profiles"]
     
     # Check if profile exists
@@ -215,7 +206,7 @@ async def get_learning_insights(
     """
     Get personalized learning insights based on user profile
     """
-    user_id = ObjectId(current_user["_id"])
+    user_id = ObjectId(current_user["id"])
     profiles_collection = db["user_profiles"]
     
     profile = await profiles_collection.find_one({"user_id": user_id})
@@ -225,7 +216,6 @@ async def get_learning_insights(
             "message": "Complete your profile to get personalized insights",
             "profile_completed": False
         }
-    
     return {
         "profile_completed": True,
         "insights": {
@@ -252,7 +242,7 @@ async def get_learning_progress(
     """
     Get user's overall learning progress
     """
-    user_id = ObjectId(current_user["_id"])
+    user_id = ObjectId(current_user["id"])
     progress_collection = db["user_progress"]
     
     progress_data = await progress_collection.find({"user_id": user_id}).to_list(length=100)
@@ -291,7 +281,7 @@ async def get_recent_activity(
     """
     Get user's recent learning activities
     """
-    user_id = ObjectId(current_user["_id"])
+    user_id = ObjectId(current_user["id"])
     activity_collection = db["user_activity"]
     
     activities = await activity_collection.find(
@@ -321,7 +311,7 @@ async def get_weekly_stats(
     """
     Get weekly learning statistics
     """
-    user_id = ObjectId(current_user["_id"])
+    user_id = ObjectId(current_user["id"])
     end_date = datetime.now()
     start_date = end_date - timedelta(days=7)
     

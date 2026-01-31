@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Union
 import os
-from jose import jwt
+from dotenv import load_dotenv
+from jose import jwt,JWTError
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException,status,Cookie,Depends,Request,Response
 from fastapi.security import OAuth2PasswordBearer,HTTPBearer
 
 from sqlalchemy.orm import Session
-from dotenv import load_dotenv
 from app.dependencies import get_db
 from app.models import User
 from app.schemas import TokenData                                                   
@@ -20,22 +20,20 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
+ 
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 # Authentication
 def authenticate_user(db: Session, email: str, password: str) -> Union[User, bool]:
-    print(f"DEBUG: Looking up user: {email}")
+    # print(f"DEBUG: Looking up user: {email}")
     user = db.query(User).filter(User.email == email).first()
     if not user:
         print(f"DEBUG: User not found: {email}")
         return False        
-    print(f"DEBUG: User found, checking password")
-    if not verify_password(password, user.hashed_password):
-        print(f"DEBUG: Password verification failed")
+    if not verify_password(password, user['hashed_password']):
         return False        
-    print(f"DEBUG: Password verification successful")
+    # print(f"DEBUG: Password verification successful")
     return user
 
 # Extracting token from cookies
@@ -73,21 +71,38 @@ def run_if_authenticated(user: User):
     else:
         print("Access denied.")
 
-async def get_current_user(request: Request, db=Depends(get_db)):
+async def get_current_user(
+    request: Request,
+    db=Depends(get_db)
+):
     token = request.cookies.get("access_token")
+    print(token)
     if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated"
+        )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email = payload.get("sub")
-    except:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
+        email: str | None = payload.get("sub")
+        if email is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token payload")
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token"
+        )
     user = await db["users"].find_one({"email": email})
-
     if not user:
-        raise HTTPException(status_code=401, detail="User not found")
-
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+    # Normalize MongoDB document
     user["id"] = str(user["_id"])
+    user.pop("_id", None)
+    user.pop("password_hash", None)
     return user
 

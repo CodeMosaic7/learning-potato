@@ -48,8 +48,7 @@ const Home = () => {
     }
   }
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white overflow-hidden">
-    
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white overflow-hidden">    
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
@@ -65,7 +64,6 @@ const Home = () => {
             <Zap className="w-4 h-4 text-yellow-400" />
             <span className="text-sm text-purple-300">A Learning Revolution</span>
           </div>
-
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
             Transform Your
             <br />
@@ -73,11 +71,9 @@ const Home = () => {
               Learning Journey
             </span>
           </h1>
-
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
             Personalized education with our AI-driven platform. Adaptive quizzes, intelligent tutoring, and comprehensive progress tracking all in one place.
           </p>
-
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button onClick={handleStartLearning} className="group bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-purple-500/50 flex items-center space-x-2">
               <PlayCircle className="w-6 h-6 group-hover:animate-bounce" />
@@ -99,7 +95,6 @@ const Home = () => {
             This platform aims to provide personalized education based on mental and intellectual age of the child.
           </p>
         </div>
-
         <div className="grid md:grid-cols-2 gap-8">
           {features.map((feature, index) => (
             <div 
@@ -126,7 +121,6 @@ const Home = () => {
       </section>
       {/* Footer */}
       <Footer/>
-    
     </div>
   );
 };
