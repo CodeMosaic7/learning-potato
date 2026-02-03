@@ -43,7 +43,7 @@ async def initialize_chatbot(
 ):
     print(current_user)
     user_id = str(current_user["id"])
-    
+    username = current_user['username']
     try:
         logger.info(f"Initializing chatbot for {user_id}")
         
@@ -52,7 +52,7 @@ async def initialize_chatbot(
 
         if not session:
             # Initialize new state (removed duplicate db call)
-            state = getState(name=current_user["name"])
+            state = getState(None)
             current_stage = ChatStage.ASSESSMENT_IN_PROGRESS
             
             # Run graph to get initial response
