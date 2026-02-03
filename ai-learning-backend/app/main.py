@@ -7,7 +7,7 @@ from app.dependencies import get_db
 from app.db import engine
 from app.models import Base, User  
 from app.authentication.routes import router as auth_router
-# from app.router.chatbot import router as chatbot_router
+from app.router.chatbot import router as chatbot_router
 from app.router.quiz import router as quiz_router
 from app.router.homework import router as hw_router
 from app.router.dashboard import router as dashboard_router
@@ -51,7 +51,7 @@ def read_users(db: Session = Depends(get_db)):
 
 # routers
 app.include_router(auth_router)
-# app.include_router(chatbot_router)
+app.include_router(chatbot_router)
 app.include_router(quiz_router)
 app.include_router(hw_router)
 app.include_router(dashboard_router)
