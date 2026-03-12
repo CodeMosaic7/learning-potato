@@ -17,19 +17,19 @@ from app.services.chatbot.agent_chatbot import (
     run_graph
 )
 
+router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
+logger = logging.getLogger(__name__)
+
 class ChatStage:
     INIT = "INIT"
     ASSESSMENT_IN_PROGRESS = "ASSESSMENT_IN_PROGRESS"
     ASSESSMENT_COMPLETED = "ASSESSMENT_COMPLETED"
 
 def determine_stage(state: dict) -> str:
+    """Determines the current status of the conversation from the state."""
     if state.get("follow_up_done"):
         return ChatStage.ASSESSMENT_COMPLETED
     return ChatStage.ASSESSMENT_IN_PROGRESS
-
-router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
-logger = logging.getLogger(__name__)
-
 
 @router.post(
     "/initialize",
@@ -41,25 +41,22 @@ async def initialize_chatbot(
     current_user=Depends(get_current_user),
     db=Depends(get_db)
 ):
-    print(current_user)
     user_id = str(current_user["id"])
-    username = current_user['username']
+    username = current_user["name"]
     try:
         logger.info(f"Initializing chatbot for {user_id}")
-        
-        # Single DB request - try to find existing session
         session = await db.chat_sessions.find_one({"user_id": user_id})
-
         if not session:
-            # Initialize new state (removed duplicate db call)
+            # Initialize new state (removed duplicate)
             state = getState(None)
             current_stage = ChatStage.ASSESSMENT_IN_PROGRESS
-            
+            # chatbot needs to be initialised if not exists in chat_sessions, if it exists it must start from that point.
             # Run graph to get initial response
-            result = run_graph(state)
+            result = run_graph(state) # it should not run every time, just initialise the
             next_stage = determine_stage(result)
 
-            # Single DB request - insert new session
+            result="Chatbot initialised"
+            next_stage = ChatStage.ASSESSMENT_IN_PROGRESS
             try:
                 await db.chat_sessions.insert_one({
                     "user_id": user_id,
@@ -79,8 +76,8 @@ async def initialize_chatbot(
             current_stage = session.get("current_stage", ChatStage.ASSESSMENT_IN_PROGRESS)
             
             # Run graph with existing state
-            result = run_graph(state)
-            next_stage = determine_stage(result)
+            # result = run_graph(state)
+            next_stage = determine_stage(result) # For initialization, we might not want to run the graph, just return a welcome message
 
             # Single DB request - atomic update
             await db.chat_sessions.update_one(
@@ -95,7 +92,7 @@ async def initialize_chatbot(
             )
 
         return InitializeChatbotResponse(
-            session_id=user_id,  # Simplified - use user_id directly
+            session_id=user_id, 
             initial_response=ChatResponse(
                 response=result.get("current_response", "Hello"),
                 stage=next_stage
