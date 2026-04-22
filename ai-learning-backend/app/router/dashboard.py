@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Dict, Any
 from datetime import datetime, timedelta
 from bson import ObjectId
-from app.dependencies import get_db
+from app.mongo_db import get_mongo_connection as get_db
 from app.authentication.auth import get_current_user
 from app.model.user_profile_model import UserProfileCreate, UserProfileOut, UserProfileDB
 

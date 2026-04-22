@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pymongo.errors import PyMongoError, DuplicateKeyError
 
-from app.dependencies import get_db
+from app.mongo_db import get_mongo_connection as get_db
 from app.authentication.auth import get_current_user
 from app.schemas import (
     ChatMessage,

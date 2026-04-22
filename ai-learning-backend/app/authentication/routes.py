@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from datetime import timedelta
 from dotenv import load_dotenv
 import datetime
-from app.dependencies import get_db
+from app.mongo_db import get_mongo_connection as get_db
 from app.model.user_model import UserCreate, UserResponse, UserLogin, Token, UserOut
 from app.authentication.auth import (
     get_password_hash,

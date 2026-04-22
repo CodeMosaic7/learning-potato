@@ -8,7 +8,7 @@ from fastapi import Depends, HTTPException,status,Cookie,Depends,Request,Respons
 from fastapi.security import OAuth2PasswordBearer,HTTPBearer
 
 from sqlalchemy.orm import Session
-from app.dependencies import get_db
+from app.mongo_db import get_mongo_connection as get_db
 from app.models import User
 from app.schemas import TokenData                                                   
 

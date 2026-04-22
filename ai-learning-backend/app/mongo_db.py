@@ -1,21 +1,21 @@
-from pymongo import MongoClient
-from motor.motor_asyncio import AsyncIOMotorClient
-from app.config import settings
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+import os 
+from dotenv import load_dotenv
+load_dotenv()
 
-client=None
-db=None
-def connect_mongo_db():
-    global db,client
-    client=AsyncIOMotorClient(settings.MONGO_DB_URI)
-    db=client[settings.MONGO_DB_NAME]
-    print("Connected to MongoDB successfully.")
-    return client,db
-
-def close_mongo_db():
+uri = f"mongodb+srv://manika348_db_user:{os.getenv('MONGO_DB_PASSWORD')}@cluster0.7ab3cqu.mongodb.net/?appName=Cluster0"
+def connect_to_mongo():
     global client
-    if client :
-        client.close()
-        print("MongoDB connection closed.")
+    client = MongoClient(uri, server_api=ServerApi('1'))
+    try:
+        client.admin.command('ping')
+        print("Pinged your deployment. You successfully connected to MongoDB!")
+    except Exception as e:
+        print(e)
 
+def close_mongo_connection():
+    client.close()
 
-
+def get_mongo_connection():
+    return client

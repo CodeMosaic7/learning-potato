@@ -4,7 +4,7 @@ from bson import ObjectId
 import cloudinary
 import cloudinary.uploader
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
-from app.dependencies import get_db
+from app.mongo_db import get_mongo_connection as get_db
 from pydantic_settings import BaseSettings
 from app.config import settings 
 
