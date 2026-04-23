@@ -4,9 +4,6 @@ from datetime import datetime
 from typing import Optional, List
 
 # === USER SCHEMAS ===
-  
-
-
 class TokenData(BaseModel):
     email: Optional[str] = None
 
