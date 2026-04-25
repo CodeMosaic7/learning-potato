@@ -12,11 +12,9 @@ from app.authentication.auth import (
 )
 from app.middleware.cloudinary_middleware import upload_profile_image
 
-
 load_dotenv()
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
-
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 async def register_user(user: UserCreate):
@@ -26,23 +24,19 @@ async def register_user(user: UserCreate):
             {"username": user.username}
         ]
     })
-
     if existing_user:
         if existing_user.get("email") == user.email:
             raise HTTPException(status_code=400, detail="Email already registered")
         else:
             raise HTTPException(status_code=400, detail="Username already taken")
-
     profile_image_url = None
     if getattr(user, "profile_image", None):
         profile_image_url = await upload_profile_image(
             image_data=user.profile_image,
             user_id=user.username
         )
-
     hashed_password = get_password_hash(user.password)
     created_at = datetime.now(timezone.utc)
-
     db_user = {
         "email": user.email,
         "username": user.username,
@@ -65,9 +59,7 @@ async def register_user(user: UserCreate):
             "date": None
         }
     }
-
     await mongo_db.user_collection.insert_one(db_user)
-
     return UserOut(
         name=user.name,
         username=user.username,
@@ -85,7 +77,6 @@ async def login_user(login_data: UserLogin, response: Response):
     user = await mongo_db.user_collection.find_one({"email": login_data.email})
     if not user or not verify_password(login_data.password, user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
-
     access_token = create_access_token(
         data={"sub": user["email"]},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

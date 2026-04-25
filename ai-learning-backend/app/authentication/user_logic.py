@@ -1,13 +1,11 @@
-from app.db import Session
 from app.models import User
 from datetime import datetime, timezone
 from typing import Optional
 import json
-class UserDatabase:
-    
+
+class UserDatabase:    
     def __init__(self, db_session: Session):
         self.db = db_session
-
     def save_mental_age(self, user_id: int, mental_age: int, assessment_data: dict):
         """Save mental age assessment to database"""
         try:

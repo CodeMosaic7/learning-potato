@@ -29,6 +29,7 @@ async def connect_to_mongo():
     user_collection = db["users"]
     chat_collection = db["chats"]
     quiz_collection = db["quizzes"]
+    
     print("Collections initialized.")
 
 

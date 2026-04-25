@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Dict, Any
 from datetime import datetime, timedelta
 from bson import ObjectId
-from app.mongo_db import get_mongo_connection as get_db
+from app import mongo_db
 from app.authentication.auth import get_current_user
 from app.model.user_profile_model import UserProfileCreate, UserProfileOut, UserProfileDB
 
@@ -10,21 +10,18 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 @router.get("/", response_model=Dict[str, Any])
 async def get_dashboard_overview(
     current_user: dict = Depends(get_current_user),
-    db = Depends(get_db)
+    db = Depends(mongo_db.get_mongo_connection)
 ):
     """
     Get dashboard overview with user stats and profile
     """
-    user_id = str(current_user["id"])
+    user = await mongo_db.user_collection.find_one({"email": email})
 
-    profiles_collection = db["user_profiles"]
-    user_profile = await profiles_collection.find_one({"user_id": ObjectId(user_id)})
-    
-    courses_collection = db["user_courses"]
-    total_courses = await courses_collection.count_documents({"user_id": ObjectId(user_id)})
-    
-    progress_collection = db["user_progress"]
-    completed_courses = await progress_collection.count_documents({
+    user_profile = await mongo_db.user_profiles.find_one(user)
+
+    total_courses = await mongo_db.user_courses.count_documents({"user_id": ObjectId(user_id)})
+
+    completed_courses = await mongo_db.user_progress.count_documents({
         "user_id": ObjectId(user_id),
         "status": "completed"
     })
@@ -60,7 +57,7 @@ async def get_dashboard_overview(
 @router.get("/profile", response_model=UserProfileOut)
 async def get_user_profile(
     current_user: dict = Depends(get_current_user),
-    db = Depends(get_db)
+    db = Depends(mongo_db.get_mongo_connection)
 ):
     """Get user's learning profile"""
     user_id = ObjectId(current_user["id"])
@@ -87,7 +84,7 @@ async def get_user_profile(
 async def create_user_profile(
     profile_data: UserProfileCreate,
     current_user: dict = Depends(get_current_user),
-    db = Depends(get_db)
+    db = Depends(mongo_db.get_mongo_connection)
 ):
     """
     Create a new user learning profile
@@ -131,7 +128,7 @@ async def create_user_profile(
 async def update_user_profile(
     profile_data: UserProfileCreate,
     current_user: dict = Depends(get_current_user),
-    db = Depends(get_db)
+    db = Depends(mongo_db.get_mongo_connection)
 ):
     """
     Update user's learning profile
@@ -179,7 +176,7 @@ async def update_user_profile(
 @router.delete("/profile", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user_profile(
     current_user: dict = Depends(get_current_user),
-    db = Depends(get_db)
+    db = Depends(mongo_db.get_mongo_connection)
 ):
     """
     Delete user's learning profile
@@ -201,7 +198,7 @@ async def delete_user_profile(
 @router.get("/learning-insights")
 async def get_learning_insights(
     current_user: dict = Depends(get_current_user),
-    db = Depends(get_db)
+    db = Depends(mongo_db.get_mongo_connection)
 ):
     """
     Get personalized learning insights based on user profile
@@ -237,7 +234,7 @@ async def get_learning_insights(
 @router.get("/progress")
 async def get_learning_progress(
     current_user: dict = Depends(get_current_user),
-    db = Depends(get_db)
+    db = Depends(mongo_db.get_mongo_connection)
 ):
     """
     Get user's overall learning progress
@@ -275,7 +272,7 @@ async def get_learning_progress(
 @router.get("/recent-activity")
 async def get_recent_activity(
     current_user: dict = Depends(get_current_user),
-    db = Depends(get_db),
+    db = Depends(mongo_db.get_mongo_connection),
     limit: int = 10
 ):
     """
@@ -306,7 +303,7 @@ async def get_recent_activity(
 @router.get("/stats/weekly")
 async def get_weekly_stats(
     current_user: dict = Depends(get_current_user),
-    db = Depends(get_db)
+    db = Depends(mongo_db.get_mongo_connection)
 ):
     """
     Get weekly learning statistics
