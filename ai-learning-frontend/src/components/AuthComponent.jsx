@@ -49,7 +49,7 @@ const AuthComponent = () => {
     setImagePreview(null);
   };
 
-const setUserData = async () => {
+  const setUserData = async () => {
     try {
       const response = await Userdetails();
       if (response) {
@@ -91,13 +91,13 @@ const setUserData = async () => {
           formData.grade_level,
           formData.profile_image
         );
-
-        if (registerResponse.success) {
+        console.log(registerResponse);
+        if (registerResponse) {
           // Auto-login after successful registration
           const loginResponse = await loginUser(formData.email, formData.password);
           if (loginResponse.success) {
             const user_details=await setUserData();
-            localStorage.setItem("user_details",JSON.stringify(user_details));
+            if (user_details)
             alert('Registration successful!');
             navigate('/dashboard');
           } else {

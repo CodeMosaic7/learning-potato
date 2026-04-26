@@ -24,6 +24,7 @@ async def register_user(user: UserCreate):
             {"username": user.username}
         ]
     })
+    print(f"Existing user check: {existing_user}")  
     if existing_user:
         if existing_user.get("email") == user.email:
             raise HTTPException(status_code=400, detail="Email already registered")
