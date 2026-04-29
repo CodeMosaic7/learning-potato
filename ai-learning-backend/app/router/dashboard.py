@@ -15,8 +15,8 @@ async def get_dashboard_overview(
     """
     Get dashboard overview with user stats and profile
     """
-    user = await mongo_db.user_collection.find_one({"email": email})
-
+    user = await mongo_db.user_collection.find_one({"email": current_user.email})
+    
     user_profile = await mongo_db.user_profiles.find_one(user)
 
     total_courses = await mongo_db.user_courses.count_documents({"user_id": ObjectId(user_id)})

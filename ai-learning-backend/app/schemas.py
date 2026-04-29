@@ -3,12 +3,11 @@ from typing import Dict, Any
 from datetime import datetime
 from typing import Optional, List
 
-# === USER SCHEMAS ===
+# USER SCHEMAS
 class TokenData(BaseModel):
     email: Optional[str] = None
 
-
-# === CHATBOT SCHEMAS ===
+# CHATBOT SCHEMAS
 
 class ChatMessage(BaseModel):
     message: str = Field(..., min_length=1, max_length=1000, description="User message to the chatbot")

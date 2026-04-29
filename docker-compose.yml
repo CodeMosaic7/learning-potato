@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./ai-learning-backend
+    container_name: ai-learning-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  frontend:
+    build: ./ai-learning-frontend
+    container_name: ai-learning-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
