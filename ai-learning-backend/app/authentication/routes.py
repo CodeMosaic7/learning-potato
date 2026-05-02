@@ -60,12 +60,33 @@ async def register_user(user: UserCreate):
             "date": None
         }
     }
-    await mongo_db.user_collection.insert_one(db_user)
-    # also initialize user_profile and other needed collections for the user_id
-    user_id = db_user["_id"]
-    await mongo_db.user_profiles.insert_one({"user_id": user_id})
-    await mongo_db.user_courses.insert_one({"user_id": user_id})
-    await mongo_db.user_progress.insert_one({"user_id": user_id})
+    result= await mongo_db.user_collection.insert_one(db_user)
+    user_id = result.inserted_id
+
+    await mongo_db.user_profiles.insert_one({
+        "user_id": user_id,
+        "bio": None,
+        "interests": [],
+        "created_at": created_at,
+        "updated_at": None,
+    })
+
+    await mongo_db.user_courses.insert_one({
+        "user_id": user_id,
+        "enrolled_courses": [],
+        "completed_courses": [],
+        "created_at": created_at,
+        "updated_at": None,
+    })
+
+    await mongo_db.user_progress.insert_one({
+        "user_id": user_id,
+        "progress": {},
+        "last_activity": None,
+        "created_at": created_at,
+        "updated_at": None,
+    })
+    
     return UserOut(
         name=user.name,
         username=user.username,

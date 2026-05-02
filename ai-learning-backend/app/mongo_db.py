@@ -17,7 +17,7 @@ user_progress = None
 
 
 async def connect_to_mongo():
-    global client, user_collection, chat_collection, quiz_collection, user_profiles, user_courses, user_progress
+    global client, user_collection, chat_collection, quiz_collection, user_profiles, user_courses, user_progress, progress_collection
 
     client = AsyncIOMotorClient(uri, server_api=ServerApi('1'))
 
@@ -35,6 +35,7 @@ async def connect_to_mongo():
     user_profiles = db["user_profiles"]
     user_courses = db["user_courses"]
     user_progress = db["user_progress"]
+    progress_collection = db["user_progress"]
 
     print("Collections initialized.")
 

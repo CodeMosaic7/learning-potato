@@ -12,32 +12,27 @@ async def get_dashboard_overview(
     current_user: dict = Depends(get_current_user),
     db = Depends(mongo_db.get_mongo_connection)
 ):
-    """
-    Get dashboard overview with user stats and profile
-    """
-    user = await mongo_db.user_collection.find_one({"email": current_user.email})
-    
-    user_profile = await mongo_db.user_profiles.find_one(user)
-
-    total_courses = await mongo_db.user_courses.count_documents({"user_id": ObjectId(user_id)})
-
+    user = await mongo_db.user_collection.find_one({"email": current_user["email"]})
+    user_id = user["_id"] 
+    user_profile = await mongo_db.user_profiles.find_one({"user_id": user_id})
+    total_courses = await mongo_db.user_courses.count_documents({"user_id": user_id})
     completed_courses = await mongo_db.user_progress.count_documents({
-        "user_id": ObjectId(user_id),
+        "user_id": user_id,
         "status": "completed"
     })
-    in_progress = await progress_collection.count_documents({
-        "user_id": ObjectId(user_id),
+    in_progress = await mongo_db.user_progress.count_documents({ 
+        "user_id": user_id,
         "status": "in_progress"
     })
     return {
-        "message": f"Welcome back, {current_user['name']}!",
+        "message": f"Welcome back, {current_user.get('full_name', '')}!", 
         "user": {
-            "id": user_id,
-            "name": current_user["name"],
-            "username": current_user["username"],
-            "email": current_user["email"],
-            "profile_image": current_user.get("profile_image", ""),
-            "grade_level": current_user.get("grade_level", ""),
+            "id": str(user_id),
+            "name": current_user.get("full_name", ""),
+            "username": current_user.get("username", ""),
+            "email": current_user.get("email", ""),
+            "profile_image": current_user.get("profile", {}).get("profile_image", ""),
+            "grade_level": current_user.get("profile", {}).get("grade_level", ""),
             "member_since": current_user.get("created_at").strftime("%B %Y") if current_user.get("created_at") else "Unknown"
         },
         "stats": {
@@ -59,26 +54,22 @@ async def get_user_profile(
     current_user: dict = Depends(get_current_user),
     db = Depends(mongo_db.get_mongo_connection)
 ):
-    """Get user's learning profile"""
     user_id = ObjectId(current_user["id"])
-    print(user_id)
     profiles_collection = db["user_profiles"]
-    
-    profile = await profiles_collection.find_one({"user_id": user_id})
-    # return empty userProfileOut
-    if not profile:
-        return 
 
-    
-    if not profile:
+    profile = await profiles_collection.find_one({"user_id": user_id})
+
+    if not profile: 
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User profile not found. Please create a profile first."
         )
-    # Convert MongoDB document to Pydantic model
-    profile["id"] = str(profile.pop("id"))
-    profile["user_id"] = str(profile["user_id"])    
+
+    profile["id"] = str(profile.pop("_id")) 
+    profile["user_id"] = str(profile["user_id"])
     return UserProfileOut(**profile)
+
+
 
 @router.post("/profile", response_model=UserProfileOut, status_code=status.HTTP_201_CREATED)
 async def create_user_profile(
