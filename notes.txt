@@ -4,3 +4,8 @@
 4. Chatbot that helps with homework
 
 5. integrate production database
+
+Snowflake schema
+
+- User table (center table)
+- 

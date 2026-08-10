@@ -1,0 +1,92 @@
+learning-potato/
+├── .gitignore
+├── README.md
+├── docker-compose.yml
+├── notes.txt
+├── ai-learning-backend/
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── test.py
+│   └── app/
+│       ├── config.py
+│       ├── crud.py
+│       ├── models.py
+│       ├── mongo_db.py
+│       ├── schemas.py
+│       ├── authentication/
+│       │   ├── __init__.py
+│       │   ├── auth.py
+│       │   ├── routes.py
+│       │   └── user_logic.py
+│       ├── middleware/
+│       │   ├── __init__.py
+│       │   └── cloudinary_middleware.py
+│       ├── model/
+│       │   ├── __init__.py
+│       │   ├── base.py
+│       │   ├── chat_model.py
+│       │   ├── homework_model.py
+│       │   ├── quiz_attempts_model.py
+│       │   ├── quiz_model.py
+│       │   ├── user_model.py
+│       │   └── user_profile_model.py
+│       ├── router/
+│       │   ├── __init__.py
+│       │   ├── chatbot.py
+│       │   ├── dashboard.py
+│       │   ├── homework.py
+│       │   └── quiz.py
+│       └── services/
+│           ├── __init__.py
+│           ├── HWhelper/
+│           │   ├── helper.py
+│           │   └── imagereader.py
+│           ├── chatbot/
+│           │   ├── agent_chatbot.py
+│           │   ├── llm.py
+│           │   ├── main.py (empty)
+│           │   ├── nodes.py/ (empty directory)
+│           │   ├── rate_limiter.py
+│           │   └── web_guidance.py
+│           └── quiz/
+│               ├── groq.py
+│               ├── prompt.py
+│               └── quiz_generator.py
+└── ai-learning-frontend/
+    ├── Dockerfile
+    ├── eslint.config.js
+    ├── index.html
+    ├── package.json
+    ├── package-lock.json
+    ├── postcss.config.js
+    ├── README.md
+    ├── tailwind.config.js
+    ├── vite.config.js
+    ├── public/
+    │   ├── logo.png
+    │   ├── mascot.png
+    │   └── web_mascot.png
+    └── src/
+        ├── App.jsx
+        ├── index.css
+        ├── main.jsx
+        ├── api/
+        │   ├── api.js
+        │   └── config.js
+        ├── components/
+        │   ├── AuthComponent.jsx
+        │   ├── Footer.jsx
+        │   ├── Header.jsx
+        │   └── Sidebar.jsx
+        ├── elements/
+        │   ├── Badge.jsx
+        │   ├── Button.jsx
+        │   ├── Card.jsx
+        │   └── Input.jsx
+        └── pages/
+            ├── Chatbot.jsx
+            ├── Dashboard.jsx
+            ├── Home.jsx
+            ├── HomeWorkHelper.jsx
+            ├── Quiz.jsx
+            └── Roadmap.jsx

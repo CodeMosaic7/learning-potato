@@ -1,0 +1,8 @@
+Journey ID,Journey Name,Persona,Trigger,Key Steps,Success Outcome,Label
+UJ-001,Student Registration & Setup,New Learner,Student opens platform,Registers account -> Creates student profile -> Redirected to Initial Assessment,Account created & ready for assessment,TARGET V1
+UJ-002,Initial Cognitive Assessment,New Learner,First login or prompt,Completes short diagnostic interaction -> System evaluates cognitive/academic dimensions -> Learner Profile initialized,Profile generated & Dashboard loaded,TARGET V1
+UJ-003,Adaptive Tutoring Chat,Active Student,Student asks question,Inputs question -> Adaptation Engine retrieves profile -> AI Gateway generates adaptive response -> Event logged,Clear explanation matching reading level,TARGET V1
+UJ-004,Adaptive Quiz Challenge,Active Student,Student selects topic,System generates adaptive questions -> Student answers questions -> Immediate scoring & hints -> Event logged,Quiz score recorded & skill updated,TARGET V1
+UJ-005,Adaptive Homework Scaffolding,Active Student,Student uploads HW photo,OCR extracts text -> Adaptation Engine determines scaffolding depth -> Step-by-step guidance provided,Homework solved with understanding,TARGET V1
+UJ-006,Personalised Dashboard Review,Active Student,Student opens dashboard,System aggregates event metrics -> Displays active strengths topic mastery & recommended next steps,Clear view of progress & next actions,TARGET V1
+UJ-007,Roadmap Progression & Revision,Active Student,Student views roadmap,System displays ordered topics -> Student completes module -> Profile recalibrated & next topic unlocked,Continuous learning advancement,TARGET V1

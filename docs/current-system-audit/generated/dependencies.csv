@@ -1,0 +1,25 @@
+Dependency,Version,Used By,Purpose,Status,Evidence
+fastapi,0.116.1,Backend API Routers,Web API Framework,VERIFIED (Missing app/main.py instantiation),ai-learning-backend/requirements.txt:L22
+uvicorn[standard],0.35.0,Backend Dockerfile & CLI,ASGI Server,VERIFIED (References missing app.main:app),ai-learning-backend/requirements.txt:L110
+motor,3.7.1,app/mongo_db.py,Async MongoDB Driver,VERIFIED,ai-learning-backend/requirements.txt:L58
+pymongo,4.15.5,app/mongo_db.py,MongoDB Client & Errors,VERIFIED,ai-learning-backend/requirements.txt:L79
+langgraph,0.6.4,app/services/chatbot/agent_chatbot.py,Agent State Graph Orchestration,VERIFIED,ai-learning-backend/requirements.txt:L49
+langchain,0.3.27,app/services/chatbot/agent_chatbot.py,LLM Framework,VERIFIED,ai-learning-backend/requirements.txt:L44
+langchain-groq,0.3.7,app/services/chatbot/llm.py,Groq LLM Provider Integration,VERIFIED,ai-learning-backend/requirements.txt:L47
+langchain-google-genai,2.1.9,app/services/chatbot/agent_chatbot.py,Gemini LLM Provider Integration,UNUSED (Imported but ChatGroq used),ai-learning-backend/requirements.txt:L46
+groq,0.37.1,app/services/quiz/groq.py,Direct Groq Client API,VERIFIED,ai-learning-backend/requirements.txt:L33
+httpx,0.28.1,"app/services/HWhelper/helper.py, app/services/quiz/groq.py",Async HTTP Requests to LLM APIs,VERIFIED,ai-learning-backend/requirements.txt:L39
+pytesseract,0.3.13,app/services/HWhelper/imagereader.py,Optical Character Recognition (OCR),VERIFIED (Requires system tesseract-ocr binary),ai-learning-backend/requirements.txt:L82
+pillow,11.3.0,app/services/HWhelper/imagereader.py,Image Manipulation,VERIFIED,ai-learning-backend/requirements.txt:L68
+pydantic,2.11.7,app/schemas.py,Data Validation Schemas,VERIFIED,ai-learning-backend/requirements.txt:L74
+pydantic-settings,2.12.0,app/config.py,Environment Settings Management,VERIFIED,ai-learning-backend/requirements.txt:L75
+python-jose[cryptography],3.5.0,app/authentication/auth.py,JWT Token Generation & Decoding,VERIFIED,ai-learning-backend/requirements.txt:L84
+passlib[bcrypt],1.7.4,app/authentication/auth.py,Password Hashing (bcrypt),VERIFIED,ai-learning-backend/requirements.txt:L67
+cloudinary,1.44.1,app/middleware/cloudinary_middleware.py,Image Storage Service API,VERIFIED,ai-learning-backend/requirements.txt:L13
+SQLAlchemy,2.0.42,app/crud.py,SQL ORM (Obsolete),UNUSED / CONFLICT (Code switched to MongoDB Motor),ai-learning-backend/requirements.txt:L96
+react,19.1.0,Frontend Web App,UI Framework,VERIFIED,ai-learning-frontend/package.json:L17
+react-router-dom,7.6.3,src/App.jsx,Client-side Routing,VERIFIED,ai-learning-frontend/package.json:L19
+axios,1.10.0,src/api/config.js,HTTP API Client,VERIFIED,ai-learning-frontend/package.json:L14
+tailwindcss,3.4.17,src/index.css,Utility-first CSS Framework,VERIFIED,ai-learning-frontend/package.json:L32
+framer-motion,12.23.6,Frontend UI,Animation Library,UNUSED (Imported in package.json but unused in components),ai-learning-frontend/package.json:L15
+lucide-react,0.525.0,Frontend Pages & Components,UI Icons,VERIFIED,ai-learning-frontend/package.json:L16

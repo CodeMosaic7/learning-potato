@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
+from copy import deepcopy
 import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pymongo.errors import PyMongoError, DuplicateKeyError
-
 from app.mongo_db import get_mongo_connection as get_db
 from app.authentication.auth import get_current_user
 from app.schemas import (
@@ -31,6 +31,11 @@ def determine_stage(state: dict) -> str:
         return ChatStage.ASSESSMENT_COMPLETED
     return ChatStage.ASSESSMENT_IN_PROGRESS
 
+def _welcome_response(state: dict) -> str:
+    """Extract the chatbot's opening line from a graph result, with a safe fallback."""
+    return state.get("current_response") or "Hello! Let's get started."
+
+
 @router.post(
     "/initialize",
     response_model=InitializeChatbotResponse,
@@ -40,71 +45,59 @@ def determine_stage(state: dict) -> str:
 async def initialize_chatbot(
     current_user=Depends(get_current_user),
     db=Depends(get_db)
-):
+):  
+    """ initialise chatbot session based on the current state and gives a simple welcome message """
+    print(current_user)
     user_id = str(current_user["id"])
-    username = current_user["name"]
     try:
         logger.info(f"Initializing chatbot for {user_id}")
-        session = await db.chat_sessions.find_one({"user_id": user_id})
+        session = await db.chat_collection.find_one({"user_id": user_id})
         if not session:
-            # Initialize new state (removed duplicate)
-            state = getState(None)
-            current_stage = ChatStage.ASSESSMENT_IN_PROGRESS
-            # chatbot needs to be initialised if not exists in chat_sessions, if it exists it must start from that point.
-            # Run graph to get initial response
-            result = run_graph(state) # it should not run every time, just initialise the
-            next_stage = determine_stage(result)
+            initial_state = getState(None)
+            graph_result = run_graph(initial_state)       
+            next_stage = determine_stage(graph_result)
+            welcome = _welcome_response(graph_result)
 
-            result="Chatbot initialised"
-            next_stage = ChatStage.ASSESSMENT_IN_PROGRESS
             try:
                 await db.chat_sessions.insert_one({
                     "user_id": user_id,
-                    "state": result,
+                    "state": graph_result,               
                     "current_stage": next_stage,
                     "created_at": datetime.now(timezone.utc),
                     "updated_at": datetime.now(timezone.utc),
                 })
             except DuplicateKeyError:
-                # Handle race condition - another request created session
+                # Race condition — another request just created the session
                 session = await db.chat_sessions.find_one({"user_id": user_id})
-                result = session["state"]
+                graph_result = session["state"]
                 next_stage = session["current_stage"]
-        else:
-            # Session exists - use existing state
-            state = session["state"]
-            current_stage = session.get("current_stage", ChatStage.ASSESSMENT_IN_PROGRESS)
-            
-            # Run graph with existing state
-            # result = run_graph(state)
-            next_stage = determine_stage(result) # For initialization, we might not want to run the graph, just return a welcome message
+                welcome = _welcome_response(graph_result)
 
-            # Single DB request - atomic update
+        else:
+            # ── Resume existing session ────────────────────────────────────
+            # On re-initialization we don't re-run the graph; we just return
+            # whatever the session's current state already says.
+            graph_result = session["state"]
+            next_stage = session.get("current_stage", ChatStage.ASSESSMENT_IN_PROGRESS)
+            welcome = _welcome_response(graph_result)
+
             await db.chat_sessions.update_one(
                 {"user_id": user_id},
-                {
-                    "$set": {
-                        "state": result,
-                        "current_stage": next_stage,
-                        "updated_at": datetime.now(timezone.utc)
-                    }
-                }
+                {"$set": {"updated_at": datetime.now(timezone.utc)}},
             )
 
         return InitializeChatbotResponse(
-            session_id=user_id, 
-            initial_response=ChatResponse(
-                response=result.get("current_response", "Hello"),
-                stage=next_stage
-            ),
+            session_id=user_id,
+            initial_response=ChatResponse(response=welcome, stage=next_stage),
             status="initialized",
-            user_id=user_id  
+            user_id=user_id,
         )
+
     except PyMongoError as e:
-        logger.error(f"MongoDB error for user {user_id}: {str(e)}")
+        logger.error("MongoDB error for user %s: %s", user_id, e)
         raise HTTPException(500, "Database error occurred")
     except Exception as e:
-        logger.error(f"Error initializing chatbot for user {user_id}: {str(e)}")
+        logger.error("Error initializing chatbot for user %s: %s", user_id, e)
         raise HTTPException(500, "Failed to initialize chatbot")
 
 
@@ -112,68 +105,67 @@ async def initialize_chatbot(
     "/chat",
     response_model=ChatResponse,
     summary="Send message to chatbot",
-    description="Processes user message"
+    description="Processes a user message and advances the assessment graph.",
 )
 async def chat_with_bot(
     message: ChatMessage,
     current_user=Depends(get_current_user),
-    db=Depends(get_db)
+    db=Depends(get_db),
 ):
-    print("In chat- chatbot")
     user_id = str(current_user["id"])
+
     try:
-        # Single DB request - find session
         session = await db.chat_sessions.find_one({"user_id": user_id})
         if not session:
-            raise HTTPException(400, "Chat not initialized. Please initialize first.")
-        # Check if assessment is completed
+            raise HTTPException(400, "Chat not initialized. Please call /initialize first.")
+
         if session["current_stage"] == ChatStage.ASSESSMENT_COMPLETED:
             return ChatResponse(
                 response="Assessment already completed. Thank you 🙏",
-                stage=ChatStage.ASSESSMENT_COMPLETED
+                stage=ChatStage.ASSESSMENT_COMPLETED,
             )
-        # Work with state (in-memory operations, right now)
-        state = session["state"]
+
+        # Build a clean state copy so the original isn't mutated on graph failure
+        state = deepcopy(session["state"])
         state["user_input"] = message.message
-        state["conversation_history"].append({
+        state.setdefault("conversation_history", []).append({
             "role": "user",
             "content": message.message,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         })
-        # Process with agent
-        result = run_graph(state)
-        next_stage = determine_stage(result)
-        # Single DB request - atomic update
+
+        graph_result = run_graph(state)
+        next_stage = determine_stage(graph_result)
+
         updated_session = await db.chat_sessions.find_one_and_update(
             {"user_id": user_id},
             {
                 "$set": {
-                    "state": result,
+                    "state": graph_result,
                     "current_stage": next_stage,
-                    "updated_at": datetime.now(timezone.utc)
+                    "updated_at": datetime.now(timezone.utc),
                 }
             },
-            return_document=True  # Returns updated document
+            return_document=True,
         )
 
         if not updated_session:
             raise HTTPException(500, "Failed to update chat session")
 
         return ChatResponse(
-            response=result["current_response"],
-            stage=next_stage
+            response=graph_result["current_response"],
+            stage=next_stage,
         )
 
     except HTTPException:
         raise
     except PyMongoError as e:
-        logger.error(f"MongoDB error for user {user_id}: {str(e)}")
+        logger.error("MongoDB error for user %s: %s", user_id, e)
         raise HTTPException(500, "Database error occurred")
     except Exception as e:
-        logger.error(f"Error processing message for user {user_id}: {str(e)}")
+        logger.error("Error processing message for user %s: %s", user_id, e)
         raise HTTPException(500, "Failed to process message")
 
-    
 @router.get(
     "/status",
     response_model=ChatbotStatus

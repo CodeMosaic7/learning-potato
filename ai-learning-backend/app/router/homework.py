@@ -1,4 +1,5 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from app.domains.identity import AuthenticatedStudent, get_current_student
 from app.services.HWhelper.helper import process_homework_image
 
 import logging
@@ -7,7 +8,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/homework", tags=["Homework Helper"])
 
 @router.post("/upload")
-async def handle_homework(file: UploadFile = File(...)):
+async def handle_homework(
+    file: UploadFile = File(...),
+    current_student: AuthenticatedStudent = Depends(get_current_student),
+):
     """
     Upload homework image and extract text/solve problems from it
     """

@@ -1,0 +1,11 @@
+class Collections:
+    USERS = "users"
+    STUDENT_PROFILES = "user_profiles"
+    REFRESH_SESSIONS = "refresh_sessions"
+    CHAT_SESSIONS = "chat_sessions"
+    CHAT_MESSAGES = "chat_messages"
+    LEARNING_EVENTS = "learning_events"
+    USER_COURSES = "user_courses"
+    USER_PROGRESS = "user_progress"
+    USER_ACTIVITY = "user_activity"
+    QUIZZES = "quizzes"

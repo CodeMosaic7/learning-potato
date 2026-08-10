@@ -1,0 +1,17 @@
+Collection Name,Primary Key,Key Indexes,Ownership Field,Purpose,Version Field,Label
+users,ObjectId (_id),email (unique) & username (unique),N/A,Student auth credentials role flags and status,schema_version,TARGET V1
+student_profiles,ObjectId (_id),user_id (unique),user_id,Demographics DOB grade level profile image,schema_version,TARGET V1
+learner_profiles,ObjectId (_id),user_id (unique),user_id,Structured cognitive academic and interaction profile,profile_version,TARGET V1
+learner_profile_versions,ObjectId (_id),user_id & version,user_id,Historical snapshot versions of learner profiles,schema_version,TARGET V1
+assessment_sessions,ObjectId (_id),user_id & status,user_id,Diagnostic assessment session state and progress,schema_version,TARGET V1
+assessment_answers,ObjectId (_id),session_id & question_id,user_id,Raw student responses to diagnostic questions,schema_version,TARGET V1
+chat_sessions,ObjectId (_id),user_id & status,user_id,LangGraph chat session state and metadata,schema_version,TARGET V1
+chat_messages,ObjectId (_id),session_id & created_at,user_id,Individual chat message turns with token metrics,schema_version,TARGET V1
+learning_events,ObjectId (_id),user_id & event_type & occurred_at,user_id,Immutable telemetry stream for student activities,schema_version,TARGET V1
+skill_mastery,ObjectId (_id),user_id & subject & skill,user_id,Per-student topic mastery levels and confidence,schema_version,TARGET V1
+quiz_definitions,ObjectId (_id),quiz_id & creator_id,creator_id,Structured AI-generated and template quizzes,schema_version,TARGET V1
+quiz_attempts,ObjectId (_id),user_id & quiz_id,user_id,Student quiz submission scores answers and timing,schema_version,TARGET V1
+homework_submissions,ObjectId (_id),user_id & created_at,user_id,Uploaded HW images OCR text and generated steps,schema_version,TARGET V1
+recommendations,ObjectId (_id),user_id & status,user_id,Adaptive content recommendations generated for student,schema_version,TARGET V1
+roadmaps,ObjectId (_id),user_id (unique),user_id,Personalized topic progression and revision schedule,schema_version,TARGET V1
+activity_logs,ObjectId (_id),user_id & created_at,user_id,Aggregated timeline feed for dashboard rendering,schema_version,TARGET V1

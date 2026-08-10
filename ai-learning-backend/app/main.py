@@ -1,46 +1,44 @@
-import os
-from fastapi import FastAPI
-from sqlalchemy.orm import Session
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from app.authentication.routes import router as auth_router
-from app.router.chatbot import router as chatbot_router
-from app.router.quiz import router as quiz_router
-from app.router.homework import router as hw_router
-from app.router.dashboard import router as dashboard_router
-from app.mongo_db import close_mongo_connection, connect_to_mongo
+from fastapi import FastAPI
+from app.api.health_routes import health_router
+from app.api.router import api_router
+from app.core.config import get_settings
+from app.core.exceptions import register_exception_handlers
+from app.core.logging import configure_logging
+from app.core.middleware import register_middleware
+from app.db.client import close_database, connect_database
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await connect_to_mongo()
+    settings = get_settings()
+    configure_logging(settings)
+
+    await connect_database(app, settings)
+    from app.db.client import db_client
+    from app.db.indexes import ensure_identity_indexes
+    if db_client.client:
+        await ensure_identity_indexes(db_client.get_database())
     yield
-    await close_mongo_connection()
+    await close_database(app)
 
-app = FastAPI(title="Learning Platform", version="1.0.0", lifespan=lifespan)
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+def create_application() -> FastAPI:
+    settings = get_settings()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[FRONTEND_URL], 
-    allow_credentials=True,
-    allow_headers=["*"],
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-)
+    application = FastAPI(
+        title=settings.APP_NAME,
+        version=settings.APP_VERSION,
+        lifespan=lifespan,
+    )
 
-@app.get("/")
-async def root():
-    return {"message": "FastAPI Authentication System is running!"}
-# setting up of Database connections
+    register_middleware(application, settings)
+    register_exception_handlers(application)
 
-# testing purpose
-# @app.get("/users/")
-# def read_users(db: Session = Depends(get_db)):
-#     return db.query(User).all()
+    application.include_router(health_router)
+    application.include_router(api_router, prefix=settings.API_PREFIX)
 
-# routers
-app.include_router(auth_router) 
-app.include_router(chatbot_router)
-app.include_router(quiz_router)
-app.include_router(hw_router)
-app.include_router(dashboard_router)
+    return application
+
+
+app = create_application()

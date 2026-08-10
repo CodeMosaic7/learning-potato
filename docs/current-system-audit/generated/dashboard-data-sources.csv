@@ -1,0 +1,10 @@
+Dashboard Element,Component,API Endpoint,Backend Service,Database Source,Calculation,Status
+User Overview Header,Dashboard.jsx:L150-L168,GET /dashboard/,app/router/dashboard.py:L10,users + user_profiles,Direct field retrieval (name mental_age intellect_level),Partially Implemented (Broken auth header passing in API client)
+Key Stats Cards,Dashboard.jsx:L170-L196,GET /dashboard/,app/router/dashboard.py:L10,user_courses + user_progress,count_documents & completion rate math,Partially Implemented (Frontend expects quiz_stats/learning_streak/homework_stats which backend doesn't return in /dashboard/)
+Assessment Progress Card,Dashboard.jsx:L198-L218,GET /dashboard/,app/router/dashboard.py:L10,users (assessment_progress),Direct field retrieval,Partially Implemented
+Pending Homework Card,Dashboard.jsx:L220-L246,GET /dashboard/,app/router/dashboard.py:L10,homework_stats (Missing),Mocked / Missing in backend,Disconnected / Contract Mismatch
+Quiz Generator Form,Dashboard.jsx:L248-L282,None (Local state alert),None,None,None,Disconnected (Alert only)
+Recent Quiz Scores,Dashboard.jsx:L283-L312,GET /dashboard/,app/router/dashboard.py:L10,quiz_stats.recent_scores (Missing),Mocked / Missing in backend,Disconnected / Contract Mismatch
+Badges Earned,Dashboard.jsx:L313-L336,GET /dashboard/,app/router/dashboard.py:L10,badges_earned (Missing),Mocked / Missing in backend,Disconnected / Contract Mismatch
+Recent Activity List,Dashboard.jsx:L337-L367,GET /dashboard/recent-activity,app/router/dashboard.py:L263,user_activity (Unpopulated collection),Limit 10 sorted by timestamp,Disconnected (No backend process populates user_activity)
+Homework Help Banner,Dashboard.jsx:L368-L384,None (Navigation link),None,None,None,Static Navigation

@@ -1,0 +1,18 @@
+Dimension Category,Field Name,Data Type,Evidence Sources,Consuming Features,Update Trigger,Label
+Cognitive,comprehension,level/confidence/count,Initial Assessment & Chat turns,Chatbot & Homework Helper,Post-interaction event,TARGET V1
+Cognitive,reasoning,level/confidence/count,Initial Assessment & Quiz logic,Quiz Generator & Scaffolding,Quiz submission event,TARGET V1
+Cognitive,problem_solving,level/confidence/count,Quiz attempts & Homework steps,Homework Helper & Quiz difficulty,Activity completion,TARGET V1
+Cognitive,memory_recall,level/confidence/count,Revision Quizzes & Repeated topics,Roadmap revision scheduler,Periodic review,TARGET V1
+Cognitive,attention_consistency,level/confidence/count,Session duration & answer speed,Dashboard pace metrics,Session end,TARGET V1
+Cognitive,processing_speed,level/confidence/count,Quiz response times & chat intervals,Quiz time limits,Quiz completion,TARGET V1
+Cognitive,instruction_following,level/confidence/count,Multi-step homework steps,Homework step depth,Homework progress,TARGET V1
+Academic,reading_level,grade_level_str,Initial Assessment & Chat vocabulary,Chatbot & Explanations,Assessment completion,TARGET V1
+Academic,numeracy_level,grade_level_str,Initial Assessment & Math Quizzes,Math Quiz & Homework,Quiz completion,TARGET V1
+Academic,topic_mastery,map_skill_float,Quiz attempts & Homework success,Roadmap & Recommendations,Every relevant event,TARGET V1
+Academic,strengths,list_strings,High mastery topics,Dashboard strengths summary,Recalibration engine,TARGET V1
+Academic,weaknesses,list_strings,Low mastery & repeated errors,Dashboard & Roadmap revision,Recalibration engine,TARGET V1
+Academic,misconceptions,list_strings,Logged systematic errors,Chatbot & Homework hints,Specific incorrect answer,TARGET V1
+Interaction,explanation_depth,enum_str,Student feedback & chat depth,Chatbot response length,Profile preference update,TARGET V1
+Interaction,response_length,enum_str,Student preference & engagement,Chatbot formatting,Profile preference update,TARGET V1
+Interaction,learning_pace,enum_str,Module completion rates,Roadmap topic spacing,Periodic recalibration,TARGET V1
+Interaction,example_preference,enum_str,Interaction telemetry,Chatbot & HW examples,Profile preference update,TARGET V1

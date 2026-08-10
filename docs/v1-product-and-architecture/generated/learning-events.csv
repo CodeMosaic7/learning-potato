@@ -1,0 +1,14 @@
+Event Type,Producer Service,Consuming Services,Payload Summary,Learner Profile Effect,Dashboard Effect,Label
+ASSESSMENT_STARTED,Assessment Service,Learner Profile Service,session_id & timestamp,Creates assessment session,Updates status banner,TARGET V1
+ASSESSMENT_ANSWERED,Assessment Service,Assessment Engine,session_id question_id answer duration,Logs raw cognitive evidence,Increments assessment progress,TARGET V1
+ASSESSMENT_COMPLETED,Assessment Service,Learner Profile & Adaptation Engine,session_id summary_metrics,Initializes Learner Profile,Unlocks adaptive features,TARGET V1
+CHAT_MESSAGE_SENT,Chatbot Service,Policy & Chatbot Engine,session_id message_text,Logs interaction engagement,Updates recent activity,TARGET V1
+CHAT_INTERACTION_COMPLETED,Chatbot Service,Learner Profile Service,session_id response_length vocabulary_used,Updates comprehension & depth preference,Updates XP & recent activity,TARGET V1
+QUIZ_STARTED,Quiz Service,Dashboard Query Service,quiz_id subject difficulty,Logs quiz attempt start,Renders active quiz card,TARGET V1
+QUIZ_COMPLETED,Quiz Service,Learner Profile & Roadmap Service,quiz_id score total_questions duration,Updates topic_mastery & numeracy/reasoning,Updates quiz stats & streak,TARGET V1
+HOMEWORK_SUBMITTED,Homework Service,OCR Service,submission_id file_type size,Logs help-seeking frequency,Increments HW activity,TARGET V1
+HOMEWORK_PROCESSED,Homework Service,Learner Profile Service,submission_id subject hints_given,Updates topic_mastery & instruction_following,Updates HW completion rate,TARGET V1
+PROFILE_UPDATED,Learner Profile Service,Adaptation Policy Engine,user_id updated_fields,Triggers adaptation policy refresh,Refreshes profile summary,TARGET V1
+SKILL_MASTERY_UPDATED,Learner Profile Service,Roadmap & Dashboard Service,user_id skill new_mastery_level,Updates skill mastery matrix,Updates mastery chips & roadmap,TARGET V1
+RECOMMENDATION_CREATED,Adaptation Policy Engine,Dashboard Query Service,recommendation_id topic priority_score,N/A,Renders recommended next action,TARGET V1
+ROADMAP_UPDATED,Roadmap Service,Dashboard Query Service,user_id active_module next_module,N/A,Renders updated roadmap progress,TARGET V1

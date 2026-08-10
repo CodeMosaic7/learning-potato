@@ -1,3 +1,6 @@
+import React from 'react';
+import { Home, MessageSquare, Upload, Trophy, BarChart3, TrendingUp, Brain, User, LogOut } from 'lucide-react';
+
 const Sidebar = ({ activeTab, setActiveTab, user }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, color: 'blue' },
@@ -49,10 +52,10 @@ const Sidebar = ({ activeTab, setActiveTab, user }) => {
             <p className="text-xs text-dark-400">Premium Student</p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" className="w-full">
+        <button className="w-full flex items-center justify-center gap-2 text-sm text-slate-400 hover:text-white py-2 px-3 rounded-lg hover:bg-slate-800 transition-colors">
           <LogOut className="h-4 w-4" />
           Sign Out
-        </Button>
+        </button>
       </div>
     </div>
   );

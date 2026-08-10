@@ -1,0 +1,22 @@
+Method,Route,Handler File,Authentication,Authorization,Request Schema,Response Schema,Service Layer,Database Tables/Collections,Status
+POST,/auth/register,app/authentication/routes.py:L19,None,None,UserCreate,UserOut,Cloudinary upload,users user_profiles user_courses user_progress,Unreachable (Missing app/main.py)
+POST,/auth/login,app/authentication/routes.py:L102,None,None,UserLogin,Token,JWT token gen,users,Unreachable (Missing app/main.py)
+GET,/auth/me,app/authentication/routes.py:L122,Required (Cookie/Bearer),None,None,UserResponse,get_current_user,users,Unreachable (Missing app/main.py)
+GET,/auth/user-details,app/authentication/routes.py:L127,Required (Cookie/Bearer),None,None,UserResponse,get_current_user,users,Unreachable (Missing app/main.py)
+GET,/auth/protected,app/authentication/routes.py:L132,Required (Cookie/Bearer),None,None,Dict,get_current_user,users,Unreachable (Missing app/main.py)
+POST,/auth/logout,app/authentication/routes.py:L137,None,None,None,Dict,Cookie deletion,None,Unreachable (Missing app/main.py)
+GET,/auth/debug-token,app/authentication/routes.py:L143,None,None,None,Dict,None,None,Unreachable (Missing app/main.py)
+POST,/chatbot/initialize,app/router/chatbot.py:L38,Required,None,None,InitializeChatbotResponse,agent_chatbot.py (run_graph),chat_collection / chat_sessions,Unreachable & DB collection typo
+POST,/chatbot/chat,app/router/chatbot.py:L103,Required,None,ChatMessage,ChatResponse,agent_chatbot.py (run_graph),chat_sessions,Unreachable & throws NameError (deepcopy)
+GET,/chatbot/status,app/router/chatbot.py:L168,Required,None,None,ChatbotStatus,None,chat_sessions,Unreachable & throws AttributeError (current_user.id)
+GET,/dashboard/,app/router/dashboard.py:L10,Required,None,None,Dict,None,users user_profiles user_courses user_progress,Unreachable & MongoDB count mismatch
+GET,/dashboard/profile,app/router/dashboard.py:L52,Required,None,None,UserProfileOut,None,user_profiles,Unreachable
+POST,/dashboard/profile,app/router/dashboard.py:L74,Required,None,UserProfileCreate,UserProfileOut,None,user_profiles,Unreachable & ID query bug
+PUT,/dashboard/profile,app/router/dashboard.py:L118,Required,None,UserProfileCreate,UserProfileOut,None,user_profiles,Unreachable
+DELETE,/dashboard/profile,app/router/dashboard.py:L167,Required,None,None,None,None,user_profiles,Unreachable & Key error (_id)
+GET,/dashboard/learning-insights,app/router/dashboard.py:L189,Required,None,None,Dict,None,user_profiles,Unreachable
+GET,/dashboard/progress,app/router/dashboard.py:L225,Required,None,None,Dict,None,user_progress,Unreachable
+GET,/dashboard/recent-activity,app/router/dashboard.py:L263,Required,None,None,Dict,None,user_activity,Unreachable
+GET,/dashboard/stats/weekly,app/router/dashboard.py:L294,Required,None,None,Dict,None,user_activity,Unreachable
+POST,/homework/upload,app/router/homework.py:L9,None,None,UploadFile (File),Dict,helper.py process_homework_image,None,Unreachable
+POST,/quiz/,app/router/quiz.py:L6,None,None,Body (mental_age topic num_questions time_limit),Dict,quiz_generator.py create_quiz,None,Unreachable

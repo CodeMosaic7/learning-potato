@@ -1,0 +1,8 @@
+Route,Page Component,Required Role,Data Sources,Status,Evidence
+"/",Home,None,Static / Local State,Complete,"src/App.jsx:L15, src/pages/Home.jsx"
+"/login",AuthComponent,None,API (/auth/login /auth/register /auth/me),Complete,"src/App.jsx:L16, src/components/AuthComponent.jsx"
+"/dashboard",Dashboard,Authenticated User,API (/dashboard/* /dashboard/profile /dashboard/learning-insights /dashboard/progress /dashboard/recent-activity /dashboard/stats/weekly),Partially Implemented (Broken API parameter passing & auth headers),"src/App.jsx:L17, src/pages/Dashboard.jsx"
+"/chatbot",Chatbot,Authenticated User (LocalStorage check),API (/chatbot/initialize /chatbot/chat),Partially Implemented (Backend crashes on /chat),"src/App.jsx:L18, src/pages/Chatbot.jsx"
+"/HomeWorkHelper",HomeWorkHelper,None,API (/homework/upload) + Hardcoded Mocks,Partially Implemented (Upload call unawaited & missing variable crash),"src/App.jsx:L19, src/pages/HomeWorkHelper.jsx:L25-L52"
+"/Quiz",Quiz,None,Hardcoded Mock Questions,Disconnected from Backend,"src/App.jsx:L20, src/pages/Quiz.jsx:L63-L86"
+"/Roadmap",Roadmap,None,Static Placeholder Text,Placeholder,"src/App.jsx:L21, src/pages/Roadmap.jsx:L7"

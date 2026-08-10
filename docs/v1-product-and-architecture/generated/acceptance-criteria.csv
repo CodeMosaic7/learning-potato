@@ -1,0 +1,10 @@
+Feature / Capability,Scenario Name,Given Clause,When Clause,Then Clause,Label
+Student Auth,Valid Registration,Given a new student on the registration page,When they submit valid email username full name password and grade level,Then a student account is created with role student and an auth token is issued,TARGET V1
+Student Auth,Protected Ownership,Given an authenticated student,When they request another student's quiz attempt or profile,Then the API rejects the request with HTTP 403 Forbidden,TARGET V1
+Initial Assessment,Assessment Flow,Given an authenticated student without a completed profile,When they enter the initial assessment and submit diagnostic answers,Then an assessment session is saved and diagnostic evidence is logged,TARGET V1
+Learner Profile,Profile Initialization,Given a completed diagnostic assessment,When the Learner Profile Service processes the assessment summary,Then a multidimensional Learner Profile document is created in learner_profiles,TARGET V1
+Adaptation Engine,Policy Evaluation,Given a student with low comprehension level,When they ask the Chatbot a complex science question,Then the Chatbot response is adapted to simple vocabulary and guided steps,TARGET V1
+Quiz Generator,Adaptive Questioning,Given a student with topic mastery < 0.50 on fractions,When they generate a fractions quiz,Then the quiz contains foundational questions with hints enabled,TARGET V1
+Homework Helper,Image Processing & Hints,Given a student uploading a clear math homework image,When the image is processed,Then text is extracted and step-by-step scaffolding is returned based on reading level,TARGET V1
+Dashboard,Personalised Telemetry,Given a student who completed a quiz,When they view the Dashboard,Then quiz stats and streak are updated dynamically from learning_events,TARGET V1
+AI Gateway,Provider Decoupling,Given a feature service requesting LLM text generation,When the service calls AI Gateway generate_text(),Then the Gateway dispatches request to configured provider adapter without feature SDK calls,TARGET V1

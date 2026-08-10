@@ -1,0 +1,17 @@
+Method,Path,Auth Required,Ownership Rule,Request Payload,Response Schema,Collections Used,Label
+POST,/api/v1/auth/register,None,N/A,UserRegisterRequest,UserRegisterResponse,users & student_profiles,TARGET V1
+POST,/api/v1/auth/login,None,N/A,UserLoginRequest,TokenResponse,users,TARGET V1
+POST,/api/v1/auth/logout,Required,Student Token,None,SuccessResponse,None,TARGET V1
+GET,/api/v1/students/me,Required,Student Self,None,StudentProfileResponse,users & student_profiles,TARGET V1
+PUT,/api/v1/students/me,Required,Student Self,UpdateStudentProfileRequest,StudentProfileResponse,student_profiles,TARGET V1
+POST,/api/v1/assessments/initialize,Required,Student Self,AssessmentInitRequest,AssessmentInitResponse,assessment_sessions,TARGET V1
+POST,/api/v1/assessments/answer,Required,Session Owner,AssessmentAnswerRequest,AssessmentAnswerResponse,assessment_answers & assessment_sessions,TARGET V1
+GET,/api/v1/learner-profile,Required,Student Self,None,LearnerProfileResponse,learner_profiles,TARGET V1
+POST,/api/v1/chat/initialize,Required,Student Self,ChatInitRequest,ChatInitResponse,chat_sessions,TARGET V1
+POST,/api/v1/chat/message,Required,Session Owner,ChatMessageRequest,ChatMessageResponse,chat_sessions & chat_messages & learning_events,TARGET V1
+POST,/api/v1/quizzes/generate,Required,Student Self,QuizGenerateRequest,QuizGenerateResponse,quiz_definitions,TARGET V1
+POST,/api/v1/quizzes/submit,Required,Student Self,QuizSubmitRequest,QuizResultResponse,quiz_attempts & learning_events,TARGET V1
+POST,/api/v1/homework/upload,Required,Student Self,UploadFile (Image),HomeworkProcessResponse,homework_submissions & learning_events,TARGET V1
+GET,/api/v1/dashboard/overview,Required,Student Self,None,DashboardOverviewResponse,learner_profiles & skill_mastery & learning_events,TARGET V1
+GET,/api/v1/roadmap,Required,Student Self,None,RoadmapResponse,roadmaps & recommendations,TARGET V1
+GET,/api/v1/learning-events,Required,Student Self,Query Limit/Type,LearningEventsListResponse,learning_events,TARGET V1

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { User, Brain, Send, LogOut, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   initializeChatbot,
   sendMessageToChatbot
@@ -11,10 +12,9 @@ import Input from "../elements/Input";
 
 const Chatbot = () => {
   const navigate = useNavigate();
-  const [userData, setUser] = useState(null);
+  const { student, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [sessionId, setSessionId] = useState(null);
-  const [chatbotInitialized, setChatbotInitialized] = useState(false);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -32,26 +32,10 @@ const Chatbot = () => {
     scrollToBottom();
   }, [messages]);
 
-  // INITIAL AUTH + CHAT SETUP
+  // INITIAL CHAT SETUP
   useEffect(() => {
-    const storedUserData = localStorage.getItem("user_details");
-    if (!storedUserData) {
-      console.log("User Data not found");
-      navigate("/");
-      return;
-    }
-    try {
-      console.log(storedUserData);
-      const parsed = JSON.parse(storedUserData);
-      console.log(parsed);
-      setUser(parsed);
-      // chat initialised
-      initChat();
-    } catch (e) {
-      console.error("Error parsing user data:", e);
-      navigate("/");
-    }
-  }, [navigate]);
+    initChat();
+  }, []);
 
   const initChat = async () => {
     try {
@@ -60,7 +44,6 @@ const Chatbot = () => {
 
       if (res.session_id) {
         setSessionId(res.session_id);
-        setChatbotInitialized(true);
       }
 
       const initial = {
@@ -133,9 +116,9 @@ const Chatbot = () => {
     }
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("user_details");
-    navigate("/");
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
   };
 
   // Handle Enter key press
@@ -175,7 +158,7 @@ const Chatbot = () => {
                 AI Mental Age Tutor
               </h1>
               <p className="text-gray-400 text-sm">
-                Welcome, {userData?.name || "Learner"} 👋
+                Welcome, {student?.full_name || "Learner"} 👋
               </p>
             </div>
           </div>

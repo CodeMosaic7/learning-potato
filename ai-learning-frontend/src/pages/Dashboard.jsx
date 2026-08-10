@@ -9,84 +9,51 @@ import Footer from "../components/Footer";
 import Header from "../components/Header";
 import {
   getDashboardOverview,
-  getUserProfile,
-  createUserProfile,
-  updateUserProfile,
   getLearningInsights,
   getLearningProgress,
   getRecentActivity,
   getWeeklyStats
-} from '../api/api.js'
+} from '../api/api.js';
+import { useAuth } from "../context/AuthContext";
+
 const Dashboard = () => {
-  const navigator=useNavigate()
-  const [userData, setUserData] = useState(null);
+  const navigator = useNavigate();
+  const { student } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [userName, setUserName] = useState('');
   const [quizTopic, setQuizTopic] = useState('');
   const [quizDifficulty, setQuizDifficulty] = useState('Easy');
-  const [profile, setProfile] = useState(null);
-  const [insights, setInsights] = useState(null);
-  const [progress, setProgress] = useState(null);
-  const [recentActivity, setRecentActivity] = useState(null);
-  const [weeklyStats, setWeeklyStats] = useState(null);
   const [error, setError] = useState(null);
-
-  const getToken = () => localStorage.getItem("access_token");
-  
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
   const fetchDashboardData = async () => {
-  try {
-    setLoading(true);
-    setError(null);
+    try {
+      setLoading(true);
+      setError(null);
 
-    const token = getToken();
-    if (!token) {
-      throw new Error("User not authenticated");
+      const [
+        overviewRes,
+      ] = await Promise.all([
+        getDashboardOverview(),
+        getLearningInsights(),
+        getLearningProgress(),
+        getRecentActivity(),
+        getWeeklyStats(),
+      ]);
+
+      setDashboardData(overviewRes);
+    } catch (err) {
+      console.error("Dashboard fetch failed:", err);
+      setError(err.response?.data?.error?.message || err.message);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const headers = {
-      Authorization: `Bearer ${token}`,
-    };
 
-    // Fetch in parallel
-    const [
-      profileRes,
-      overviewRes,
-      insightsRes,
-      progressRes,
-      activityRes,
-      weeklyRes
-    ] = await Promise.all([
-      // getUserProfile(headers),
-      getDashboardOverview(headers),
-      getLearningInsights(headers),
-      getLearningProgress(headers),
-      getRecentActivity(headers),
-      getWeeklyStats(headers),
-    ]);
-
-    // Store states
-    setProfile(profileRes.data);
-    setDashboardData(overviewRes.data);
-    setInsights(insightsRes.data);
-    setProgress(progressRes.data);
-    setRecentActivity(activityRes.data);
-    // setWeeklyStats(weeklyRes.data);
-    setUserData(profileRes.data);
-    setUserName(profileRes.data?.name || "User");
-
-  } catch (err) {
-    console.error("Dashboard fetch failed:", err);
-    setError(err.response?.data?.detail || err.message);
-  } finally {
-    setLoading(false);
-  }
-};
 
   const getIntellectLevelColor = (level) => {
     const colors = {
@@ -108,15 +75,7 @@ const Dashboard = () => {
     return icons[type] || <Star className="w-5 h-5 text-slate-400" />;
   };
 
-  const handleGenerateQuiz = () => {
-    if (!quizTopic.trim()) {
-      alert('Please enter a topic for the quiz');
-      return;
-    }
-    console.log(`Generating ${quizDifficulty} quiz on: ${quizTopic}`);
-    alert(`Quiz generated! Topic: ${quizTopic}, Difficulty: ${quizDifficulty}`);
-    setQuizTopic('');
-  };
+
 
   if (loading) {
     return (
@@ -151,16 +110,16 @@ const Dashboard = () => {
         <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-sm border border-purple-500/30 rounded-3xl p-8 hover:border-purple-400/50 transition-all duration-500">
           <div className="flex items-center justify-between flex-wrap gap-6">
             <div> 
-              <h1 className="text-4xl font-bold mb-2 text-white">Hi, {userName}!</h1>
+              <h1 className="text-4xl font-bold mb-2 text-white">Hi, {student?.full_name || 'Student'}!</h1>
               <p className="text-purple-200 text-lg">Keep up the amazing work! You're doing great!</p>
             </div>
-            {userData?.mental_age && (
+            {student?.profile?.grade_level && (
               <div className="text-center bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 min-w-[160px]">
                 <Brain className="w-10 h-10 text-white mx-auto mb-3" />
-                <p className="text-sm text-purple-200 mb-1">Mental Age</p>
-                <p className="text-3xl font-bold mb-3 text-white">{userData.mental_age}</p>
-                <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold border ${getIntellectLevelColor(userData?.intellect_level)}`}>
-                  {userData?.intellect_level}
+                <p className="text-sm text-purple-200 mb-1">Grade Level</p>
+                <p className="text-3xl font-bold mb-3 text-white">{student.profile.grade_level}</p>
+                <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold border ${getIntellectLevelColor('Intermediate')}`}>
+                  Student
                 </span>
               </div>
             )}
@@ -194,28 +153,6 @@ const Dashboard = () => {
             <Award className="w-6 h-6 text-purple-400" />
           </div>
         </div>
-        {/* Assessment Progress */}
-        {userData?.assessment_progress !== 'completed' && (
-          <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 backdrop-blur-sm border border-blue-500/30 rounded-2xl p-6 hover:border-blue-400/50 transition-all">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex-1 min-w-[250px]">
-                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2 text-white">
-                  <Brain className="w-6 h-6" />
-                  <span>Complete Your Assessment</span>
-                </h3>
-                <p className="text-blue-200 mb-2">Discover your learning style and intellectual age!</p>
-                <p className="text-sm text-blue-300">Progress: {userData?.assessment_progress || '0%'}</p>
-              </div>
-              <button 
-                onClick={() => navigator("../chatbot")}
-                className="bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2"
-              >
-                {userData?.assessment_progress ? 'Continue' : 'Start Now'} 
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
         {/* Homework Section */}
         {dashboardData?.homework_stats.pending_homework > 0 && (
           <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-sm border border-purple-500/30 rounded-2xl p-6 hover:border-purple-400/50 transition-all">

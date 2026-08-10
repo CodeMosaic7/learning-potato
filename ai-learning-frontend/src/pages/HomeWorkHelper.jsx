@@ -21,8 +21,8 @@ const HomeWorkHelper = () => {
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
 
-    if (file){
-      const text=uploadHomeworkImage(file)
+    if (file) {
+      await uploadHomeworkImage(file);
     }
 
     setIsLoading(true);
@@ -37,7 +37,7 @@ const HomeWorkHelper = () => {
       };
       setMessages(prev => [...prev, userMessage]);
       await new Promise(resolve => setTimeout(resolve, 2000));
-      const aiResponse = await {
+      const aiResponse = {
         id: Date.now() + 1,
         sender: 'bot',
         text: "I can see this is a math problem involving quadratic equations. Let me help you solve this step by step.",
@@ -48,9 +48,6 @@ const HomeWorkHelper = () => {
         timestamp: new Date()
       };
       setMessages(prev => [...prev, aiResponse]);
-      setTimeout(() => {
-        setMessages(prev => [...prev, suggestionsMessage]);
-      }, 1000);
 
     } catch (error) {
       setUploadError(error.message);

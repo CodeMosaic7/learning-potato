@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Brain, Zap, Upload, X } from "lucide-react";
-import { registerUser, loginUser, Userdetails } from "../api/api";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const AuthComponent = () => {
   const navigate = useNavigate();
+  const { login, register } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
@@ -14,27 +15,25 @@ const AuthComponent = () => {
     date_of_birth: "",
     gender: "",
     grade_level: "",
-    profile_image: null
+    profile_image: null,
   });
   const [imagePreview, setImagePreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-
     if (file) {
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!validTypes.includes(file.type)) {
         alert('Please select a valid image file (JPG, PNG, GIF, or WebP)');
         return;
       }
-
       const maxSize = 5 * 1024 * 1024;
       if (file.size > maxSize) {
         alert('Image size should be less than 5MB');
         return;
       }
-
       setFormData({ ...formData, profile_image: file });
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -49,39 +48,21 @@ const AuthComponent = () => {
     setImagePreview(null);
   };
 
-  const setUserData = async () => {
-    try {
-      const response = await Userdetails();
-      if (response) {
-        console.log(response);
-        setFormData({ ...formData, ...response.data });
-        localStorage.setItem("user_details", JSON.stringify(response));
-      } else {
-        throw new Error('Failed to fetch user data');
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      throw error;
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage("");
 
     try {
       if (isLogin) {
-        // Login flow
-        const loginResponse = await loginUser(formData.email, formData.password);
+        const loginResponse = await login(formData.email, formData.password);
         if (loginResponse.success) {
-          await setUserData();
           navigate("/dashboard");
         } else {
-          throw new Error('Login failed');
+          setErrorMessage(loginResponse.error || "Login failed. Please check your credentials.");
         }
       } else {
-        // Registration flow
-        const registerResponse = await registerUser(
+        await register(
           formData.email,
           formData.username,
           formData.full_name,
@@ -91,26 +72,17 @@ const AuthComponent = () => {
           formData.grade_level,
           formData.profile_image
         );
-        console.log(registerResponse);
-        if (registerResponse) {
-          // Auto-login after successful registration
-          const loginResponse = await loginUser(formData.email, formData.password);
-          if (loginResponse.success) {
-            const user_details=await setUserData();
-            if (user_details)
-            alert('Registration successful!');
-            navigate('/dashboard');
-          } else {
-            alert('Registration successful! Please login manually.');
-            setIsLogin(true);
-          }
+        const loginResponse = await login(formData.email, formData.password);
+        if (loginResponse.success) {
+          navigate("/dashboard");
         } else {
-          throw new Error('Registration failed');
+          setIsLogin(true);
         }
       }
     } catch (error) {
-      console.error('Authentication error:', error);
-      alert(isLogin ? 'Login failed. Please check your credentials.' : 'Registration failed. Please try again.');
+      console.error("Authentication error:", error);
+      const msg = error.response?.data?.error?.message || error.message || "An unexpected error occurred.";
+      setErrorMessage(msg);
     } finally {
       setIsLoading(false);
     }
@@ -118,23 +90,24 @@ const AuthComponent = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white overflow-hidden flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-sm border border-purple-500/30 rounded-3xl p-8 hover:border-purple-400/50 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-md bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-sm border border-purple-500/30 rounded-3xl p-8 hover:border-purple-400/50 transition-all duration-500 transform hover:shadow-2xl hover:shadow-purple-500/20 max-h-[90vh] overflow-y-auto">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <Brain className="h-12 w-12 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            mello.ai
-          </h1>
-          <p className="text-slate-400">
-            Learn with artificial intelligence
-          </p>
+          <h1 className="text-3xl font-bold text-white mb-2">mello.ai</h1>
+          <p className="text-slate-400">Learn with artificial intelligence</p>
         </div>
+
+        {errorMessage && (
+          <div className="mb-6 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm text-center">
+            {errorMessage}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {!isLogin && (
             <>
-              {/* Profile Image Upload */}
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Profile Image (Optional)
@@ -181,9 +154,7 @@ const AuthComponent = () => {
                   type="text"
                   placeholder="Enter your full name"
                   value={formData.full_name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, full_name: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   required={!isLogin}
                 />
@@ -197,9 +168,7 @@ const AuthComponent = () => {
                   type="text"
                   placeholder="Enter your username"
                   value={formData.username}
-                  onChange={(e) =>
-                    setFormData({ ...formData, username: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   required={!isLogin}
                 />
@@ -212,9 +181,7 @@ const AuthComponent = () => {
                 <input
                   type="date"
                   value={formData.date_of_birth}
-                  onChange={(e) =>
-                    setFormData({ ...formData, date_of_birth: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 />
               </div>
@@ -225,9 +192,7 @@ const AuthComponent = () => {
                 </label>
                 <select
                   value={formData.gender}
-                  onChange={(e) =>
-                    setFormData({ ...formData, gender: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 >
                   <option value="">Select gender</option>
@@ -246,9 +211,7 @@ const AuthComponent = () => {
                   type="text"
                   placeholder="Enter your grade level (e.g., 10, 12)"
                   value={formData.grade_level}
-                  onChange={(e) =>
-                    setFormData({ ...formData, grade_level: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, grade_level: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 />
               </div>
@@ -263,9 +226,7 @@ const AuthComponent = () => {
               type="email"
               placeholder="Enter your email"
               value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               required
             />
@@ -279,9 +240,7 @@ const AuthComponent = () => {
               type="password"
               placeholder="Enter your password"
               value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               required
             />
@@ -308,7 +267,10 @@ const AuthComponent = () => {
 
         <div className="mt-8 text-center">
           <button
-            onClick={() => setIsLogin(!isLogin)}
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setErrorMessage("");
+            }}
             className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors duration-200"
           >
             {isLogin

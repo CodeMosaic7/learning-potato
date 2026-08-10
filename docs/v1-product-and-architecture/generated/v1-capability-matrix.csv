@@ -1,0 +1,19 @@
+Capability,Classification,Target V1 Scope,Deferred / Future Scope,Description,Status Label
+Student Registration,CONFIRMED,V1 Core,N/A,Allows student to create an account with credentials and grade level.,TARGET V1
+Student Login & Session,CONFIRMED,V1 Core,N/A,JWT authentication with token persistence and session restoration.,TARGET V1
+Student Profile Management,CONFIRMED,V1 Core,N/A,Student-owned profile metadata (name DOB grade preferences).,TARGET V1
+Initial Learner Assessment,CONFIRMED,V1 Core,N/A,Diagnostic interaction evaluating cognitive academic and interaction dimensions.,TARGET V1
+Multidimensional Learner Profile,CONFIRMED,V1 Core,N/A,Structured profile store tracking cognitive academic and interaction dimensions.,TARGET V1
+Adaptation Policy Engine,CONFIRMED,V1 Core,N/A,Central policy evaluator controlling chatbot quiz homework dashboard and roadmap.,TARGET V1
+Adaptive Chatbot,CONFIRMED,V1 Core,N/A,LangGraph-based tutoring assistant adapting explanation depth and tone.,TARGET V1
+Adaptive Quiz Generation,CONFIRMED,V1 Core,N/A,AI-generated quizzes matching student skill mastery and target difficulty.,TARGET V1
+Adaptive Homework Helper,CONFIRMED,V1 Core,N/A,OCR text extraction and adaptive scaffolding/hints for homework images.,TARGET V1
+Personalised Student Dashboard,CONFIRMED,V1 Core,N/A,Event-driven progress metrics skill mastery and adaptive recommendations.,TARGET V1
+Adaptive Learning Roadmap,CONFIRMED,V1 Core,N/A,Personalised topic progression sequence and scheduled revision intervals.,TARGET V1
+Learning Event Logging,CONFIRMED,V1 Core,N/A,Immutable telemetry stream for all student activities and profile updates.,TARGET V1
+Task-Based AI Gateway,CONFIRMED,V1 Core,N/A,Provider-independent abstraction supporting Groq Gemini OpenAI adapters.,TARGET V1
+Parent / Guardian Portal,DEFERRED,Out of V1 Scope,Future Capability,Parent oversight dashboard and child account linkage.,DEFERRED / FUTURE
+Educator / Mentor Portal,DEFERRED,Out of V1 Scope,Future Capability,Teacher classroom management and course assignment workflows.,DEFERRED / FUTURE
+Administrator Portal,DEFERRED,Out of V1 Scope,Future Capability,Platform user management and system monitoring console.,DEFERRED / FUTURE
+Content Moderation & Safety,DEFERRED,Policy Boundary Extensions Only,Required for Public Release,Input/output policy layers (pass-through in V1; full moderation later).,DEFERRED
+Payment System,DEFERRED,Out of V1 Scope,Future Capability,Subscription and payment processing integration.,FUTURE

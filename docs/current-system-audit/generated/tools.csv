@@ -1,0 +1,2 @@
+Tool,Description,Inputs,Output,Called By,Permissions,External Side Effects,Validation,Status
+None,No LangChain / LangGraph tools defined or registered in agent_chatbot.py,N/A,N/A,N/A,N/A,N/A,N/A,MISSING / UNUSED

@@ -1,0 +1,9 @@
+Feature Area,Input Profile Dimensions,Evaluated Rule,Adaptive Output Behavior,Policy Determinism,Label
+Chatbot,reading_level & comprehension,Low reading level or low comprehension,Use simple vocabulary & short sentences (max 3 sentences per turn),Deterministic,TARGET V1
+Chatbot,explanation_depth & reasoning,High reasoning & deep preference,Provide comprehensive step-by-step reasoning with formal concept mapping,Deterministic,TARGET V1
+Quiz Generator,topic_mastery & numeracy_level,Mastery < 0.50 on target skill,Generate foundational difficulty questions with hints enabled,Deterministic,TARGET V1
+Quiz Generator,topic_mastery & problem_solving,Mastery > 0.85 on target skill,Generate advanced multi-step challenge questions with tight time limit,Deterministic,TARGET V1
+Homework Helper,instruction_following & reading_level,Low instruction following capacity,Break solution into single micro-steps requiring user confirmation,Deterministic,TARGET V1
+Homework Helper,misconceptions & weaknesses,Logged misconception matching current problem,Inject targeted clarifying hint before revealing solution steps,Deterministic,TARGET V1
+Dashboard,strengths & weaknesses,Active learner profile metrics,Render top 3 priority learning actions and highlighted mastery chips,Deterministic,TARGET V1
+Roadmap,topic_mastery & memory_recall,Skill mastery decay below threshold (0.60),Automatically insert revision module before next new topic,Deterministic,TARGET V1
